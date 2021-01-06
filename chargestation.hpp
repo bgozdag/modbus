@@ -6,13 +6,31 @@
 #include "modbuscontroller.hpp"
 #include "messagecontroller.hpp"
 #include "chargestation.hpp"
+#include "sqlite3.h"
 #include <thread>
+
+#define AGENT_DB_PATH "/var/lib/vestel/webconfig.db"
+
+class ChargeSession{
+    public:
+        ChargeSession();
+        static int callback(void* data, int argc, char** argv, char** azColName){
+            
+        };
+        int lastEnergy;
+        int initialEnergy;
+        int startTime;
+        ChargeSessionStatus status;
+};
 
 class ChargePoint{
     public:
         ChargePoint();
-        void setChargePointStatus(nlohmann::json msg);
-        ChargePointStatus chargePointStatus;
+        void getStatusNotification(nlohmann::json msg);
+        ChargeSession chargeSession;
+        ChargePointStatus status;
+        AuthorizationStatus authorizationStatus;
+        int vendorErrorCode;
 };
 
 class ChargeStation{
@@ -21,7 +39,7 @@ class ChargeStation{
         ~ChargeStation();
         void updateStation(nlohmann::json msg);
         ChargePoint chargePoint;
-        ChargeStationStatus chargeStationStatus;
+        ChargeStationStatus status;
         ModbusController *modbusController;
         MessageController *messageController;
         void start();

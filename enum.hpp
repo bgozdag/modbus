@@ -33,4 +33,14 @@ enum AuthorizationStatus{
     Start,
     Finish
 };
+std::unordered_map<std::string, AuthorizationStatus> const authorizationStatusTable = { {"Timeout",AuthorizationStatus::Timeout}, {"Start",AuthorizationStatus::Start}, {"Finish",AuthorizationStatus::Finish} };
+
+enum ChargeSessionStatus{
+    Started,
+    Stopped,
+    Paused,
+    Suspended
+};
+std::unordered_map<std::string, ChargeSessionStatus> const chargeSessionStatusTable = { {"Started",ChargeSessionStatus::Started}, {"Stopped",ChargeSessionStatus::Stopped}, {"Paused",ChargeSessionStatus::Paused}, {"Suspended",ChargeSessionStatus::Suspended} };
+
 #endif

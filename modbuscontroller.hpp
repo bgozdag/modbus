@@ -9,16 +9,17 @@
 #define CHARGEPOINT_STATE_REG 1000
 #define CHARGING_STATE_REG 1001
 #define CABLE_STATE_REG 1004
+#define EVSE_FAULT_CODE_REG 1006
 
 class ModbusController{
     public:
         ModbusController(std::string host, int port);
         ~ModbusController();
         void listen();
-        void set_chargepoint_state(ChargePointStatus state);
-        void set_charging_state(int state);
+        void set_chargepoint_states(ChargePointStatus state, int vendorErrorCode);
     private:
-        void set_register(int addr, uint16_t data);
+        void set_r_register(int addr, uint16_t data);
+        void set_rw_register(int addr, uint16_t data);
         modbus_t *context;
         modbus_mapping_t *map;
         std::string host;

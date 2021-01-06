@@ -50,45 +50,59 @@ void ModbusController::listen(){
   }
 }
 
-void ModbusController::set_chargepoint_state(ChargePointStatus state){
+void ModbusController::set_chargepoint_states(ChargePointStatus state, int vendorErrorCode){
   if (state == ChargePointStatus::Available){
-    set_register(CHARGEPOINT_STATE_REG, 0);
-    set_register(CHARGING_STATE_REG, 0);
-    set_register(CABLE_STATE_REG, 0);
+    set_r_register(CHARGEPOINT_STATE_REG, 0);
+    set_r_register(CHARGING_STATE_REG, 0);
+    set_r_register(CABLE_STATE_REG, 0);
   }
   else if (state == ChargePointStatus::Preparing){
-    set_register(CHARGEPOINT_STATE_REG, 1);
-    set_register(CHARGING_STATE_REG, 0);
-    set_register(CABLE_STATE_REG, 1);
+    set_r_register(CHARGEPOINT_STATE_REG, 1);
+    set_r_register(CHARGING_STATE_REG, 0);
+    set_r_register(CABLE_STATE_REG, 1);
   }
   else if (state == ChargePointStatus::Charging){
-    set_register(CHARGEPOINT_STATE_REG, 3);
-    set_register(CHARGING_STATE_REG, 1);
+    set_r_register(CHARGEPOINT_STATE_REG, 3);
+    set_r_register(CHARGING_STATE_REG, 1);
+    set_r_register(CABLE_STATE_REG, 1);
   }
   else if (state == ChargePointStatus::SuspendedEVSE){
-    set_register(CHARGEPOINT_STATE_REG, 3);
-    set_register(CHARGING_STATE_REG, 1);
+    set_r_register(CHARGEPOINT_STATE_REG, 3);
+    set_r_register(CHARGING_STATE_REG, 1);
+    set_r_register(CABLE_STATE_REG, 1);
   }
   else if (state == ChargePointStatus::SuspendedEV){
-    set_register(CHARGEPOINT_STATE_REG, 3);
-    set_register(CHARGING_STATE_REG, 1);
+    set_r_register(CHARGEPOINT_STATE_REG, 3);
+    set_r_register(CHARGING_STATE_REG, 1);
+    set_r_register(CABLE_STATE_REG, 1);
   }
   else if (state == ChargePointStatus::Finishing){
-    set_register(CHARGEPOINT_STATE_REG, 3);
-    set_register(CHARGING_STATE_REG, 1);
+    set_r_register(CHARGEPOINT_STATE_REG, 3);
+    set_r_register(CHARGING_STATE_REG, 1);
   }
   else if (state == ChargePointStatus::Reserved){
-    set_register(CHARGEPOINT_STATE_REG, 3);
-    set_register(CHARGING_STATE_REG, 1);
+    set_r_register(CHARGEPOINT_STATE_REG, 3);
+    set_r_register(CHARGING_STATE_REG, 1);
+    set_r_register(CABLE_STATE_REG, 0);
   }
   else if (state == ChargePointStatus::Faulted){
-    set_register(CHARGEPOINT_STATE_REG, 3);
-    set_register(CHARGING_STATE_REG, 1);
+    set_r_register(CHARGEPOINT_STATE_REG, 3);
+    set_r_register(CHARGING_STATE_REG, 1);
   }
   
+  set_r_register(EVSE_FAULT_CODE_REG, vendorErrorCode);
 }
 
-void ModbusController::set_register(int addr, uint16_t data){
-  map->tab_input_registers[addr] = data;
-  logNotice("set reg[%d] : %d\n", addr, map->tab_input_registers[addr]);
+void ModbusController::set_r_register(int addr, uint16_t data){
+  if (map->tab_input_registers[addr] != data){
+    map->tab_input_registers[addr] = data;
+    logNotice("set r reg[%d] : %d\n", addr, map->tab_input_registers[addr]);
+  }
+}
+
+void ModbusController::set_rw_register(int addr, uint16_t data){
+  if (map->tab_registers[addr] != data){
+    map->tab_registers[addr] = data;
+    logNotice("set rw reg[%d] : %d\n", addr, map->tab_registers[addr]);
+  }
 }
