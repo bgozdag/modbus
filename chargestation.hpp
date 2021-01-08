@@ -1,48 +1,66 @@
 #ifndef CHARGESTATION_HPP
 #define CHARGESTATION_HPP
 
+#include "chargestation.hpp"
 #include "enum.hpp"
 #include "json.hpp"
-#include "modbuscontroller.hpp"
 #include "messagecontroller.hpp"
-#include "chargestation.hpp"
+#include "modbuscontroller.hpp"
 #include "sqlite3.h"
 #include <thread>
 
-#define AGENT_DB_PATH "/var/lib/vestel/webconfig.db"
+#define AGENT_DB_PATH "/var/lib/vestel/agent.db"
 
-class ChargeSession{
-    public:
-        ChargeSession();
-        static int callback(void* data, int argc, char** argv, char** azColName){
-            
-        };
-        int lastEnergy;
-        int initialEnergy;
-        int startTime;
-        ChargeSessionStatus status;
+class ChargeSession
+{
+public:
+  ChargeSession();
+  static int callback(void *data, int argc, char **argv, char **azColName)
+  {
+    logAlert("callback\n");
+    ChargeSession *chargeSession = (ChargeSession *)data;
+    if (argv != nullptr) {
+        if(argv[0] != nullptr)
+        {
+            chargeSession->startTime = atoi(argv[0]);
+            chargeSession->stopTime = atoi(argv[1]);
+            auto it = chargeSessionStatusTable.find(argv[2]);
+            chargeSession->status = it->second;
+            chargeSession->initialEnergy = atoi(argv[3]);
+            chargeSession->lastEnergy = atoi(argv[4]);
+        }
+    }
+    return 0;
+  };
+  int lastEnergy;
+  int initialEnergy;
+  int startTime;
+  int stopTime;
+  ChargeSessionStatus status;
 };
 
-class ChargePoint{
-    public:
-        ChargePoint();
-        void getStatusNotification(nlohmann::json msg);
-        ChargeSession chargeSession;
-        ChargePointStatus status;
-        AuthorizationStatus authorizationStatus;
-        int vendorErrorCode;
+class ChargePoint
+{
+public:
+  ChargePoint();
+  void getStatusNotification(nlohmann::json msg);
+  ChargeSession chargeSession;
+  ChargePointStatus status;
+  AuthorizationStatus authorizationStatus;
+  int vendorErrorCode;
 };
 
-class ChargeStation{
-    public:
-        ChargeStation();
-        ~ChargeStation();
-        void updateStation(nlohmann::json msg);
-        ChargePoint chargePoint;
-        ChargeStationStatus status;
-        ModbusController *modbusController;
-        MessageController *messageController;
-        void start();
+class ChargeStation
+{
+public:
+  ChargeStation();
+  ~ChargeStation();
+  void updateStation(nlohmann::json msg);
+  ChargePoint chargePoint;
+  ChargeStationStatus status;
+  ModbusController *modbusController;
+  MessageController *messageController;
+  void start();
 };
 
 #endif
