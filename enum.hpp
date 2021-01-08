@@ -14,8 +14,9 @@ enum ChargeStationStatus
   RemovedUserCard,
   WaitingForConnection
 };
+
 std::unordered_map<std::string,
-                   ChargeStationStatus> const chargeStationStatusTable = {
+  ChargeStationStatus> const chargeStationStatusTable = {
     {"Normal", ChargeStationStatus::Normal},
     {"Initializing", ChargeStationStatus::Initializing},
     {"WaitingForConfiguration", ChargeStationStatus::WaitingForConfiguration},
@@ -23,7 +24,8 @@ std::unordered_map<std::string,
     {"WaitingForMasterAddition", ChargeStationStatus::WaitingForMasterAddition},
     {"AddedUserCard", ChargeStationStatus::AddedUserCard},
     {"RemovedUserCard", ChargeStationStatus::RemovedUserCard},
-    {"WaitingForConnection", ChargeStationStatus::WaitingForConnection}};
+    {"WaitingForConnection", ChargeStationStatus::WaitingForConnection}
+  };
 
 enum ChargePointStatus
 {
@@ -37,17 +39,19 @@ enum ChargePointStatus
   Unavailable,
   Faulted
 };
+
 std::unordered_map<std::string, ChargePointStatus> const
-    chargePointStatusTable = {
-        {"Available", ChargePointStatus::Available},
-        {"Preparing", ChargePointStatus::Preparing},
-        {"Charging", ChargePointStatus::Charging},
-        {"SuspendedEVSE", ChargePointStatus::SuspendedEVSE},
-        {"SuspendedEV", ChargePointStatus::SuspendedEV},
-        {"Finishing", ChargePointStatus::Finishing},
-        {"Reserved", ChargePointStatus::Reserved},
-        {"Unavailable", ChargePointStatus::Unavailable},
-        {"Faulted", ChargePointStatus::Faulted}};
+  chargePointStatusTable = {
+    {"Available", ChargePointStatus::Available},
+    {"Preparing", ChargePointStatus::Preparing},
+    {"Charging", ChargePointStatus::Charging},
+    {"SuspendedEVSE", ChargePointStatus::SuspendedEVSE},
+    {"SuspendedEV", ChargePointStatus::SuspendedEV},
+    {"Finishing", ChargePointStatus::Finishing},
+    {"Reserved", ChargePointStatus::Reserved},
+    {"Unavailable", ChargePointStatus::Unavailable},
+    {"Faulted", ChargePointStatus::Faulted}
+  };
 
 enum AuthorizationStatus
 {
@@ -55,10 +59,13 @@ enum AuthorizationStatus
   Start,
   Finish
 };
+
 std::unordered_map<std::string, AuthorizationStatus> const
-    authorizationStatusTable = {{"Timeout", AuthorizationStatus::Timeout},
-                                {"Start", AuthorizationStatus::Start},
-                                {"Finish", AuthorizationStatus::Finish}};
+  authorizationStatusTable = {
+    {"Timeout", AuthorizationStatus::Timeout},
+    {"Start", AuthorizationStatus::Start},
+    {"Finish", AuthorizationStatus::Finish}
+  };
 
 enum ChargeSessionStatus
 {
@@ -67,10 +74,25 @@ enum ChargeSessionStatus
   Paused,
   Suspended
 };
+
 std::unordered_map<std::string, ChargeSessionStatus> const
-    chargeSessionStatusTable = {{"Started", ChargeSessionStatus::Started},
-                                {"Stopped", ChargeSessionStatus::Stopped},
-                                {"Paused", ChargeSessionStatus::Paused},
-                                {"Suspended", ChargeSessionStatus::Suspended}};
+  chargeSessionStatusTable = {
+    {"Started", ChargeSessionStatus::Started},
+    {"Stopped", ChargeSessionStatus::Stopped},
+    {"Paused", ChargeSessionStatus::Paused},
+    {"Suspended", ChargeSessionStatus::Suspended}
+  };
+
+enum ChargePointAvailability
+{
+  Inoperative,
+  Operative
+};
+
+std::unordered_map<std::string, ChargePointAvailability> const
+  chargePointAvailabilityTable = {
+    {"Inoperative", ChargePointAvailability::Inoperative},
+    {"Operative", ChargePointAvailability::Operative}
+  };
 
 #endif
