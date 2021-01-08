@@ -17,7 +17,6 @@ public:
   ChargeSession();
   static int callback(void *data, int argc, char **argv, char **azColName)
   {
-    logAlert("callback\n");
     ChargeSession *chargeSession = (ChargeSession *)data;
     if (argv != nullptr) {
         if(argv[0] != nullptr)
@@ -43,11 +42,28 @@ class ChargePoint
 {
 public:
   ChargePoint();
+  static int callback(void *data, int argc, char **argv, char **azColName)
+  {
+    ChargeSession *chargeSession = (ChargeSession *)data;
+    if (argv != nullptr) {
+        if(argv[0] != nullptr)
+        {
+            chargeSession->startTime = atoi(argv[0]);
+            chargeSession->stopTime = atoi(argv[1]);
+            auto it = chargeSessionStatusTable.find(argv[2]);
+            chargeSession->status = it->second;
+            chargeSession->initialEnergy = atoi(argv[3]);
+            chargeSession->lastEnergy = atoi(argv[4]);
+        }
+    }
+    return 0;
+  };
   void getStatusNotification(nlohmann::json msg);
   ChargeSession chargeSession;
   ChargePointStatus status;
   AuthorizationStatus authorizationStatus;
   int vendorErrorCode;
+  int proximityPilotState;
 };
 
 class ChargeStation
