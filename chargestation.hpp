@@ -13,6 +13,8 @@
 #define VFACTORY_DB_PATH "/run/media/mmcblk1p3/vfactory.db"
 #define SYSTEM_DB_PATH "/usr/lib/vestel/system.db"
 
+using json = nlohmann::json;
+
 class ChargeSession
 {
 public:
@@ -77,7 +79,8 @@ public:
     }
     return 0;
   };
-  void getStatusNotification(nlohmann::json msg);
+  void getStatusNotification(json msg);
+  void getMeterValues(json msg);
   ChargeSession chargeSession;
   ChargePointStatus status;
   AuthorizationStatus authorizationStatus;
@@ -144,7 +147,7 @@ public:
     }
     return 0;
   };
-  void updateStation(nlohmann::json msg);
+  void updateStation(json msg);
   void start();
   ModbusController *modbusController;
   MessageController *messageController;
