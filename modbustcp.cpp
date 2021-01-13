@@ -1,6 +1,6 @@
 // arm-linux-gnueabihf-gcc log.c -o log.o -c
 // arm-linux-gnueabihf-gcc sqlite3.c -o sqlite3.o -c -ldl
-// arm-linux-gnueabihf-g++ modbus.cpp messagecontroller.cpp modbuscontroller.cpp chargestation.cpp log.o sqlite3.o -o modbus -lzmq -no-pie -lmodbus -lpthread -ldl -L/usr/local/arm-zmq_modbus_sqlite/lib/ -std=c++11
+// arm-linux-gnueabihf-g++ modbustcp.cpp messagecontroller.cpp modbuscontroller.cpp chargestation.cpp log.o sqlite3.o -o modbustcp -lzmq -no-pie -lmodbus -lpthread -ldl -L/usr/local/arm-zmq_modbus_sqlite/lib/ -std=c++11
 
 #include "chargestation.hpp"
 #include "log.h"
