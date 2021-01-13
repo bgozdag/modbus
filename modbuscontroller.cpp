@@ -8,7 +8,6 @@ ModbusController::ModbusController(std::string h, int p)
   host = h;
   port = p;
   context = modbus_new_tcp(host.c_str(), port);
-  modbus_set_debug(context, TRUE);
   map = modbus_mapping_new(0, 0, 6000, 6000);
   if (map == NULL)
   {
