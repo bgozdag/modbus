@@ -65,55 +65,55 @@ void ModbusController::listen()
 }
 
 void ModbusController::set_chargepoint_states(ChargePointStatus state,
-                                              int vendorErrorCode)
+                                              int vendorErrorCode, int pilotState)
 {
   if (state == ChargePointStatus::Available)
   {
     set_r_register(uint16_t(0), CHARGEPOINT_STATE_REG);
     set_r_register(uint16_t(0), CHARGING_STATE_REG);
-    set_r_register(uint16_t(0), CABLE_STATE_REG);
   }
   else if (state == ChargePointStatus::Preparing)
   {
     set_r_register(uint16_t(1), CHARGEPOINT_STATE_REG);
     set_r_register(uint16_t(0), CHARGING_STATE_REG);
-    set_r_register(uint16_t(1), CABLE_STATE_REG);
   }
   else if (state == ChargePointStatus::Charging)
   {
     set_r_register(uint16_t(3), CHARGEPOINT_STATE_REG);
     set_r_register(uint16_t(1), CHARGING_STATE_REG);
-    set_r_register(uint16_t(1), CABLE_STATE_REG);
   }
   else if (state == ChargePointStatus::SuspendedEVSE)
   {
-    set_r_register(uint16_t(3), CHARGEPOINT_STATE_REG);
-    set_r_register(uint16_t(1), CHARGING_STATE_REG);
-    set_r_register(uint16_t(1), CABLE_STATE_REG);
+    set_r_register(uint16_t(4), CHARGEPOINT_STATE_REG);
+    set_r_register(uint16_t(0), CHARGING_STATE_REG);
   }
   else if (state == ChargePointStatus::SuspendedEV)
   {
-    set_r_register(uint16_t(3), CHARGEPOINT_STATE_REG);
-    set_r_register(uint16_t(1), CHARGING_STATE_REG);
-    set_r_register(uint16_t(1), CABLE_STATE_REG);
+    set_r_register(uint16_t(5), CHARGEPOINT_STATE_REG);
+    set_r_register(uint16_t(0), CHARGING_STATE_REG);
   }
   else if (state == ChargePointStatus::Finishing)
   {
-    set_r_register(uint16_t(3), CHARGEPOINT_STATE_REG);
-    set_r_register(uint16_t(1), CHARGING_STATE_REG);
+    if (pilotState == 0)
+    {
+      set_r_register(uint16_t(0), CHARGEPOINT_STATE_REG);
+    }
+    else if (pilotState == 2)
+    {
+      set_r_register(uint16_t(6), CHARGEPOINT_STATE_REG);
+    }
+    set_r_register(uint16_t(0), CHARGING_STATE_REG);
   }
   else if (state == ChargePointStatus::Reserved)
   {
-    set_r_register(uint16_t(3), CHARGEPOINT_STATE_REG);
-    set_r_register(uint16_t(1), CHARGING_STATE_REG);
-    set_r_register(uint16_t(0), CABLE_STATE_REG);
+    set_r_register(uint16_t(8), CHARGEPOINT_STATE_REG);
+    set_r_register(uint16_t(0), CHARGING_STATE_REG);
   }
   else if (state == ChargePointStatus::Faulted)
   {
-    set_r_register(uint16_t(3), CHARGEPOINT_STATE_REG);
-    set_r_register(uint16_t(1), CHARGING_STATE_REG);
+    set_r_register(uint16_t(7), CHARGEPOINT_STATE_REG);
+    set_r_register(uint16_t(0), CHARGING_STATE_REG);
   }
-
   set_r_register(uint16_t(vendorErrorCode), EVSE_FAULT_CODE_REG);
 }
 
@@ -128,7 +128,9 @@ void ModbusController::set_r_register(uint32_t data, int addr)
     if (map->tab_input_registers[addr] != arr[i])
     {
       map->tab_input_registers[addr] = arr[i];
-      logNotice("set r reg[%d] : %d\n", addr, map->tab_input_registers[addr]);
+      if (addr != 295){
+        logNotice("set r reg[%d] : %d\n", addr, map->tab_input_registers[addr]);
+      }
     }
     addr++;
   }
@@ -196,6 +198,22 @@ void ModbusController::set_rw_register(uint16_t data, int addr)
       map->tab_registers[addr] = data;
       logNotice("set rw reg[%d] : %d\n", addr, map->tab_registers[addr]);
     }
+}
+
+void ModbusController::set_equipment_state(ChargeStationStatus stationStatus, ChargePointStatus pointStatus)
+{
+  if (stationStatus == ChargeStationStatus::Initializing)
+  {
+    set_r_register(uint16_t(0), EQUIPMENT_STATE_REG);
+  }
+  else if (pointStatus == ChargePointStatus::Faulted)
+  {
+    set_r_register(uint16_t(2), EQUIPMENT_STATE_REG);
+  }
+  else
+  {
+    set_r_register(uint16_t(1), EQUIPMENT_STATE_REG);
+  }
 }
 
 void ModbusController::set_meter_values(int energy, int currentP1, int currentP2, int currentP3, int powerP1, int powerP2, int powerP3, int voltageP1, int voltageP2, int voltageP3)
@@ -281,4 +299,39 @@ void ModbusController::set_time(uint32_t currentTime)
 void ModbusController::set_date(uint32_t currentDate)
 {
   set_r_register(currentDate, DATE_REG);
+}
+
+void ModbusController::set_cable_state(int pilotState, int proximityState)
+{
+  if(proximityState == 1)
+  {
+    set_r_register(uint16_t(0), CABLE_STATE_REG);
+  }
+  else
+  {
+    if (pilotState == 0)
+    {
+      set_r_register(uint16_t(1), CABLE_STATE_REG);
+    }
+    else if (pilotState == 1)
+    {
+      set_r_register(uint16_t(1), CABLE_STATE_REG);
+    }
+    else if (pilotState == 2)
+    {
+      set_r_register(uint16_t(2), CABLE_STATE_REG);
+    }
+    else if (pilotState == 3)
+    {
+      set_r_register(uint16_t(3), CABLE_STATE_REG);
+    }
+    else if (pilotState == 4)
+    {
+      set_r_register(uint16_t(2), CABLE_STATE_REG);
+    }
+    else if (pilotState == 5)
+    {
+      set_r_register(uint16_t(3), CABLE_STATE_REG);
+    }
+  }
 }

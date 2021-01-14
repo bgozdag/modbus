@@ -17,6 +17,7 @@
 #define NUMBER_OF_PHASES_REG 404
 #define CHARGEPOINT_STATE_REG 1000
 #define CHARGING_STATE_REG 1001
+#define EQUIPMENT_STATE_REG 1002
 #define CABLE_STATE_REG 1004
 #define EVSE_FAULT_CODE_REG 1006
 #define CURRENT_L1_REG 1008
@@ -39,13 +40,15 @@ public:
   void update_datetime();
   void set_time(uint32_t currentTime);
   void set_date(uint32_t currentDate);
-  void set_chargepoint_states(ChargePointStatus state, int vendorErrorCode);
+  void set_chargepoint_states(ChargePointStatus state, int vendorErrorCode, int pilotState);
+  void set_equipment_state(ChargeStationStatus stationStatus, ChargePointStatus pointStatus);
   void set_meter_values(int energy, int currentP1, int currentP2, int currentP3, int powerP1, int powerP2, int powerP3, int voltageP1, int voltageP2, int voltageP3);
   void set_serial(std::string serial);
   void set_brand(std::string brand);
   void set_model(std::string model);
   void set_phase(int phase);
   void set_firmware_version(std::string version);
+  void set_cable_state(int pilotState, int proximityState);
   void listen();
 
 private:

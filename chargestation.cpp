@@ -33,7 +33,7 @@ ChargeSession::ChargeSession()
 
 ChargeStation::ChargeStation()
 {
-  status = ChargeStationStatus::Initializing;
+  status = ChargeStationStatus::Normal;
   phaseType = 0;
   powerOptimizer = 0;
   powerOptimizerMin = 0;
@@ -114,6 +114,7 @@ ChargeStation::ChargeStation()
   // logDebug("powerOptimizerMin: %d\n",powerOptimizerMin);
   // logDebug("powerOptimizerMax: %d\n",powerOptimizerMax);
   // logDebug("ChargePointStatus: %d\n",chargePoint.status);
+  // logDebug("pilotState: %d\n",chargePoint.pilotState);
   // logDebug("proximityPilotState: %d\n",chargePoint.proximityPilotState);
   // logDebug("vendorErrorCode: %d\n",chargePoint.vendorErrorCode);
   // logDebug("voltageP1: %d\n",chargePoint.voltageP1);
@@ -144,8 +145,10 @@ ChargeStation::ChargeStation()
   this->modbusController->set_model(model);
   this->modbusController->set_phase(phaseType);
   this->modbusController->set_firmware_version(fwVersion);
+  this->modbusController->set_equipment_state(status, chargePoint.status);
+  this->modbusController->set_cable_state(chargePoint.pilotState, chargePoint.proximityPilotState);
   this->modbusController->set_chargepoint_states(
-          chargePoint.status, chargePoint.vendorErrorCode);
+          chargePoint.status, chargePoint.vendorErrorCode, chargePoint.pilotState);
   this->modbusController->set_meter_values(chargePoint.activeEnergyP1,
         chargePoint.currentP1, chargePoint.currentP2, chargePoint.currentP3,
         chargePoint.activePowerP1, chargePoint.activePowerP2, chargePoint.activePowerP3,
@@ -169,7 +172,8 @@ void ChargeStation::updateStation(json msg)
     {
       chargePoint.getStatusNotification(msg);
       this->modbusController->set_chargepoint_states(
-          chargePoint.status, chargePoint.vendorErrorCode);
+          chargePoint.status, chargePoint.vendorErrorCode, chargePoint.pilotState);
+      this->modbusController->set_equipment_state(status, chargePoint.status);
     }
     else if (type.compare("MeterValues") == 0)
     {
@@ -179,11 +183,29 @@ void ChargeStation::updateStation(json msg)
         chargePoint.activePowerP1, chargePoint.activePowerP2, chargePoint.activePowerP3,
         chargePoint.voltageP1, chargePoint.voltageP2, chargePoint.voltageP3);
     }
+    else if (type.compare("pilotState") == 0 || type.compare("proximityState") == 0)
+    {
+      chargePoint.getPilotStates(msg);
+      this->modbusController->set_cable_state(chargePoint.pilotState, chargePoint.proximityPilotState);
+    }
+    else if (type.compare("ChargeStationStatusNotification") == 0)
+    {
+      getStatusNotification(msg);
+      this->modbusController->set_equipment_state(status, chargePoint.status);
+    }
   }
   else
   {
-    logWarning("received invalid msg type\n");
+    // logWarning("received invalid msg type\n");
   }
+}
+
+void ChargeStation::getStatusNotification(json msg)
+{
+  std::string status;
+  msg.at("status").get_to(status);
+  auto it = chargeStationStatusTable.find(status);
+  this->status = it->second;
 }
 
 void ChargeStation::start()
@@ -204,6 +226,7 @@ void ChargeStation::start()
 
 ChargePoint::ChargePoint()
 {
+  pilotState = 0;
   status = ChargePointStatus::Available;
   authorizationStatus = AuthorizationStatus::Finish;
   vendorErrorCode = 0;
@@ -229,7 +252,7 @@ ChargePoint::ChargePoint()
   char *zErrMsg = 0;
   int rc;
   std::string query =
-      "SELECT proximityPilotState,status,vendorErrorCode,voltageP1,"
+      "SELECT controlPilotState,proximityPilotState,status,vendorErrorCode,voltageP1,"
       "voltageP2,voltageP3,currentP1,currentP2,currentP3,activePowerP1,"
       "activePowerP2,activePowerP3,activeEnergyP1,activeEnergyP2,activeEnergyP3,"
       "availability,minCurrent,maxCurrent,availableCurrent,authorizationStatus "
@@ -254,10 +277,26 @@ ChargePoint::ChargePoint()
 void ChargePoint::getStatusNotification(json msg)
 {
   std::string status;
-  logEmerg("%s\n",status);
+  msg.at("status").get_to(status);
   auto it = chargePointStatusTable.find(status);
   this->status = it->second;
   msg.at("vendorErrorCode").get_to(vendorErrorCode);
+}
+
+void ChargePoint::getPilotStates(json msg)
+{
+  std::string type;
+  int value;
+  msg.at("type").get_to(type);
+  msg.at("data").at("value").get_to(value);
+  if (type.compare("pilotState") == 0)
+  {
+    pilotState = value;
+  }
+  else if(type.compare("proximityState") == 0)
+  {
+    proximityPilotState = value;
+  }
 }
 
 void ChargePoint::getMeterValues(json msg)
