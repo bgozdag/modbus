@@ -4,6 +4,7 @@
 #include "enum.hpp"
 #include "modbus.h"
 #include <string>
+#include <ctime>
 
 #define MAX_CONNECTION 1
 
@@ -11,6 +12,8 @@
 #define BRAND_REG 190
 #define MODEL_REG 210
 #define FIRMWARE_VERSION_REG 230
+#define DATE_REG 290
+#define TIME_REG 294
 #define NUMBER_OF_PHASES_REG 404
 #define CHARGEPOINT_STATE_REG 1000
 #define CHARGING_STATE_REG 1001
@@ -33,7 +36,9 @@ class ModbusController
 public:
   ModbusController(std::string host, int port);
   ~ModbusController();
-  void listen();
+  void update_datetime();
+  void set_time(uint32_t currentTime);
+  void set_date(uint32_t currentDate);
   void set_chargepoint_states(ChargePointStatus state, int vendorErrorCode);
   void set_meter_values(int energy, int currentP1, int currentP2, int currentP3, int powerP1, int powerP2, int powerP3, int voltageP1, int voltageP2, int voltageP3);
   void set_serial(std::string serial);
@@ -41,6 +46,7 @@ public:
   void set_model(std::string model);
   void set_phase(int phase);
   void set_firmware_version(std::string version);
+  void listen();
 
 private:
   void set_r_register(uint16_t data, int addr);
@@ -49,6 +55,7 @@ private:
   void set_rw_register(uint32_t data, int addr);
   void set_r_register(std::string data, int addr);
   void set_rw_register(std::string data, int addr);
+
   modbus_t *context;
   modbus_mapping_t *map;
   std::string host;

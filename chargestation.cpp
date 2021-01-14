@@ -191,6 +191,7 @@ void ChargeStation::start()
   std::string msg;
   json json;
   std::thread modbusListener(&ModbusController::listen, modbusController);
+  modbusListener.detach();
 
   while (1)
   {

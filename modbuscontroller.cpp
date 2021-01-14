@@ -2,6 +2,8 @@
 #include "log.h"
 #include <unistd.h>
 #include <math.h>
+#include <sstream>
+#include <thread>
 
 ModbusController::ModbusController(std::string h, int p)
 {
@@ -16,6 +18,8 @@ ModbusController::ModbusController(std::string h, int p)
     return;
   }
   logNotice("initialized modbus map\n");
+  std::thread datetimeThread(&ModbusController::update_datetime, this);
+  datetimeThread.detach();
 }
 
 ModbusController::~ModbusController()
@@ -235,4 +239,46 @@ void ModbusController::set_firmware_version(std::string version)
 {
   logNotice("set fw version: %s\n",version.c_str());
   set_r_register(version, MODEL_REG);
+}
+
+void ModbusController::update_datetime()
+{
+  time_t currentTime;
+  tm *dateTime;
+  std::stringstream ss;
+  char data[3];
+  while(1)
+  {
+    currentTime = time(0);
+    dateTime = localtime(&currentTime);
+    snprintf(data, 3, "%02d",dateTime->tm_year-100);
+    ss << data;
+    snprintf(data, 3, "%02d",dateTime->tm_mon+1);
+    ss << data;
+    snprintf(data, 3, "%02d",dateTime->tm_mday);
+    ss << data;
+    set_date(uint32_t(atoi(ss.str().c_str())));
+    ss.clear();
+    ss.str("");
+    snprintf(data, 3, "%02d",dateTime->tm_hour);
+    ss << data;
+    snprintf(data, 3, "%02d",dateTime->tm_min);
+    ss << data;
+    snprintf(data, 3, "%02d",dateTime->tm_sec);
+    ss << data;
+    set_time(uint32_t(atoi(ss.str().c_str())));
+    ss.clear();
+    ss.str("");
+    sleep(1);
+  }
+}
+
+void ModbusController::set_time(uint32_t currentTime)
+{
+  set_r_register(currentTime, TIME_REG);
+}
+
+void ModbusController::set_date(uint32_t currentDate)
+{
+  set_r_register(currentDate, DATE_REG);
 }
