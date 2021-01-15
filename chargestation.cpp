@@ -31,6 +31,25 @@ ChargeSession::ChargeSession()
   sqlite3_close(db);
 }
 
+void ChargeSession::getChargeSession(json msg)
+{
+  msg.at("startTime").get_to(startTime);
+  if (msg["finishTime"].is_number())
+  {
+    msg.at("finishTime").get_to(stopTime);
+  }
+  else
+  {
+    stopTime = 0;
+  }
+  msg.at("initialEnergy").get_to(initialEnergy);
+  msg.at("lastEnergy").get_to(lastEnergy);
+  std::string stt;
+  msg.at("status").get_to(stt);
+  auto it = chargeSessionStatusTable.find(stt);
+  status = it->second;
+}
+
 ChargeStation::ChargeStation()
 {
   status = ChargeStationStatus::Normal;
@@ -103,6 +122,9 @@ ChargeStation::ChargeStation()
     }
   }
   sqlite3_close(db);
+
+  std::thread sessionThread(&ChargeStation::updateChargeSession, this);
+  sessionThread.detach();
 
   // logDebug("serial: %s\n",serial.c_str());
   // logDebug("model: %s\n",model.c_str());
@@ -193,10 +215,33 @@ void ChargeStation::updateStation(json msg)
       getStatusNotification(msg);
       this->modbusController->set_equipment_state(status, chargePoint.status);
     }
+    else if (type.compare("ChargeSessionStatus") == 0)
+    {
+      chargePoint.chargeSession.getChargeSession(msg);
+      this->modbusController->set_charge_session(chargePoint.chargeSession.startTime, chargePoint.chargeSession.stopTime,
+        chargePoint.chargeSession.initialEnergy, chargePoint.chargeSession.lastEnergy, chargePoint.chargeSession.status);
+    }
   }
   else
   {
     // logWarning("received invalid msg type\n");
+  }
+}
+
+void ChargeStation::updateChargeSession()
+{
+  time_t currentTime;
+  int duration;
+  while (1)
+  {
+    if (chargePoint.chargeSession.status != ChargeSessionStatus::Stopped)
+    {
+      currentTime = time(0);
+      modbusController->set_session_energy(chargePoint.activeEnergyP1 + chargePoint.activeEnergyP2 + chargePoint.activeEnergyP3 - chargePoint.chargeSession.initialEnergy);
+      duration = currentTime - chargePoint.chargeSession.startTime;
+      modbusController->set_session_duration(duration);
+    }
+    sleep(1);
   }
 }
 

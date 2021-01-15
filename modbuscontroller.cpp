@@ -1,9 +1,4 @@
 #include "modbuscontroller.hpp"
-#include "log.h"
-#include <unistd.h>
-#include <math.h>
-#include <sstream>
-#include <thread>
 
 ModbusController::ModbusController(std::string h, int p)
 {
@@ -218,16 +213,52 @@ void ModbusController::set_equipment_state(ChargeStationStatus stationStatus, Ch
 
 void ModbusController::set_meter_values(int energy, int currentP1, int currentP2, int currentP3, int powerP1, int powerP2, int powerP3, int voltageP1, int voltageP2, int voltageP3)
 {
-  set_r_register(uint16_t(round((float)currentP1 / (float)1000)), CURRENT_L1_REG);
-  set_r_register(uint16_t(round((float)currentP2 / (float)1000)), CURRENT_L2_REG);
-  set_r_register(uint16_t(round((float)currentP3 / (float)1000)), CURRENT_L3_REG);
-  set_r_register(uint16_t(round((float)voltageP1 / (float)1000)), VOLTAGE_L1_REG);
-  set_r_register(uint16_t(round((float)voltageP2 / (float)1000)), VOLTAGE_L2_REG);
-  set_r_register(uint16_t(round((float)voltageP3 / (float)1000)), VOLTAGE_L3_REG);
+  set_r_register(uint32_t(round((float)energy / 10.0)), METER_READING_REG);
+  set_r_register(uint16_t(round((float)currentP1 / 1000.0)), CURRENT_L1_REG);
+  set_r_register(uint16_t(round((float)currentP2 / 1000.0)), CURRENT_L2_REG);
+  set_r_register(uint16_t(round((float)currentP3 / 1000.0)), CURRENT_L3_REG);
+  set_r_register(uint16_t(round((float)voltageP1 / 1000.0)), VOLTAGE_L1_REG);
+  set_r_register(uint16_t(round((float)voltageP2 / 1000.0)), VOLTAGE_L2_REG);
+  set_r_register(uint16_t(round((float)voltageP3 / 1000.0)), VOLTAGE_L3_REG);
   set_r_register(uint32_t(powerP1), ACTIVE_POWER_L1_REG);
   set_r_register(uint32_t(powerP2), ACTIVE_POWER_L2_REG);
   set_r_register(uint32_t(powerP3), ACTIVE_POWER_L3_REG);
   set_r_register(uint32_t(powerP1 + powerP2 + powerP3), ACTIVE_POWER_TOTAL_REG);
+}
+
+void ModbusController::set_charge_session(int startTime, int stopTime, int initialEnergy, int lastEnergy, ChargeSessionStatus status)
+{
+  std::stringstream ss;
+  char data[3];
+  int energy = lastEnergy - initialEnergy;
+  set_session_energy(energy);
+  time_t startEpoch = startTime;
+  tm *startDateTime = localtime(&startEpoch);
+  snprintf(data, 3, "%02d",startDateTime->tm_hour);
+  ss << data;
+  snprintf(data, 3, "%02d",startDateTime->tm_min);
+  ss << data;
+  snprintf(data, 3, "%02d",startDateTime->tm_sec);
+  ss << data;
+  set_r_register(uint32_t(atoi(ss.str().c_str())), SESSION_START_TIME_REG);
+  ss.clear();
+  ss.str("");
+  if (stopTime == 0)
+  {
+    set_r_register(uint32_t(0), SESSION_END_TIME);
+  }
+  else
+  {
+    time_t stopEpoch = stopTime;
+    tm *stopDateTime = localtime(&stopEpoch);
+    snprintf(data, 3, "%02d",stopDateTime->tm_hour);
+    ss << data;
+    snprintf(data, 3, "%02d",stopDateTime->tm_min);
+    ss << data;
+    snprintf(data, 3, "%02d",stopDateTime->tm_sec);
+    ss << data;
+    set_r_register(uint32_t(atoi(ss.str().c_str())), SESSION_END_TIME);
+  }
 }
 
 void ModbusController::set_serial(std::string serial)
@@ -275,7 +306,7 @@ void ModbusController::update_datetime()
     ss << data;
     snprintf(data, 3, "%02d",dateTime->tm_mday);
     ss << data;
-    set_date(uint32_t(atoi(ss.str().c_str())));
+    set_date(atoi(ss.str().c_str()));
     ss.clear();
     ss.str("");
     snprintf(data, 3, "%02d",dateTime->tm_hour);
@@ -284,21 +315,31 @@ void ModbusController::update_datetime()
     ss << data;
     snprintf(data, 3, "%02d",dateTime->tm_sec);
     ss << data;
-    set_time(uint32_t(atoi(ss.str().c_str())));
+    set_time(atoi(ss.str().c_str()));
     ss.clear();
     ss.str("");
     sleep(1);
   }
 }
 
-void ModbusController::set_time(uint32_t currentTime)
+void ModbusController::set_session_duration(int duration)
 {
-  set_r_register(currentTime, TIME_REG);
+  set_r_register(uint32_t(duration), SESSION_DURATION_REG);
 }
 
-void ModbusController::set_date(uint32_t currentDate)
+void ModbusController::set_session_energy(int energy)
 {
-  set_r_register(currentDate, DATE_REG);
+  set_r_register(uint32_t(energy), SESSION_ENERGY_REG);
+}
+
+void ModbusController::set_time(int currentTime)
+{
+  set_r_register(uint32_t(currentTime), TIME_REG);
+}
+
+void ModbusController::set_date(int currentDate)
+{
+  set_r_register(uint32_t(currentDate), DATE_REG);
 }
 
 void ModbusController::set_cable_state(int pilotState, int proximityState)

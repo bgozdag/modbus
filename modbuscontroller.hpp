@@ -3,6 +3,11 @@
 
 #include "enum.hpp"
 #include "modbus.h"
+#include "log.h"
+#include <unistd.h>
+#include <math.h>
+#include <sstream>
+#include <thread>
 #include <string>
 #include <ctime>
 
@@ -31,15 +36,18 @@
 #define ACTIVE_POWER_L2_REG 1028
 #define ACTIVE_POWER_L3_REG 1032
 #define METER_READING_REG 1036
-
+#define SESSION_ENERGY_REG 1502
+#define SESSION_START_TIME_REG 1504
+#define SESSION_DURATION_REG 1508
+#define SESSION_END_TIME 1512
 class ModbusController
 {
 public:
   ModbusController(std::string host, int port);
   ~ModbusController();
   void update_datetime();
-  void set_time(uint32_t currentTime);
-  void set_date(uint32_t currentDate);
+  void set_time(int currentTime);
+  void set_date(int currentDate);
   void set_chargepoint_states(ChargePointStatus state, int vendorErrorCode, int pilotState);
   void set_equipment_state(ChargeStationStatus stationStatus, ChargePointStatus pointStatus);
   void set_meter_values(int energy, int currentP1, int currentP2, int currentP3, int powerP1, int powerP2, int powerP3, int voltageP1, int voltageP2, int voltageP3);
@@ -47,8 +55,11 @@ public:
   void set_brand(std::string brand);
   void set_model(std::string model);
   void set_phase(int phase);
+  void set_charge_session(int startTime, int stopTime, int initialEnergy, int lastEnergy, ChargeSessionStatus status);
   void set_firmware_version(std::string version);
   void set_cable_state(int pilotState, int proximityState);
+  void set_session_duration(int duration);
+  void set_session_energy(int energy);
   void listen();
 
 private:

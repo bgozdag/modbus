@@ -8,6 +8,7 @@
 #include "modbuscontroller.hpp"
 #include "sqlite3.h"
 #include <thread>
+#include <unistd.h>
 
 #define AGENT_DB_PATH "/var/lib/vestel/agent.db"
 #define VFACTORY_DB_PATH "/run/media/mmcblk1p3/vfactory.db"
@@ -35,6 +36,7 @@ public:
     }
     return 0;
   };
+  void getChargeSession(json msg);
   int lastEnergy;
   int initialEnergy;
   int startTime;
@@ -153,6 +155,7 @@ public:
   };
   void updateStation(json msg);
   void getStatusNotification(json msg);
+  void updateChargeSession();
   void start();
   ModbusController *modbusController;
   MessageController *messageController;
