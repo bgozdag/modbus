@@ -123,9 +123,6 @@ ChargeStation::ChargeStation()
   }
   sqlite3_close(db);
 
-  std::thread sessionThread(&ChargeStation::updateChargeSession, this);
-  sessionThread.detach();
-
   // logDebug("serial: %s\n",serial.c_str());
   // logDebug("model: %s\n",model.c_str());
   // logDebug("brand: %s\n",brand.c_str());
@@ -163,6 +160,11 @@ ChargeStation::ChargeStation()
   // logDebug("lastEnergy: %d\n",chargePoint.chargeSession.lastEnergy);
   // logNotice("initialized charge station\n");
   this->modbusController->set_serial(serial);
+  this->modbusController->set_equipment_state(status, chargePoint.status);
+  this->modbusController->set_cable_state(chargePoint.pilotState, chargePoint.proximityPilotState);
+  this->modbusController->set_charge_session(chargePoint.chargeSession.startTime,
+        chargePoint.chargeSession.stopTime, chargePoint.chargeSession.initialEnergy,
+        chargePoint.chargeSession.lastEnergy, chargePoint.chargeSession.status);
   this->modbusController->set_brand(brand);
   this->modbusController->set_model(model);
   this->modbusController->set_phase(phaseType);
@@ -170,11 +172,14 @@ ChargeStation::ChargeStation()
   this->modbusController->set_equipment_state(status, chargePoint.status);
   this->modbusController->set_cable_state(chargePoint.pilotState, chargePoint.proximityPilotState);
   this->modbusController->set_chargepoint_states(
-          chargePoint.status, chargePoint.vendorErrorCode, chargePoint.pilotState);
+        chargePoint.status, chargePoint.vendorErrorCode, chargePoint.pilotState);
   this->modbusController->set_meter_values(chargePoint.activeEnergyP1,
         chargePoint.currentP1, chargePoint.currentP2, chargePoint.currentP3,
         chargePoint.activePowerP1, chargePoint.activePowerP2, chargePoint.activePowerP3,
         chargePoint.voltageP1, chargePoint.voltageP2, chargePoint.voltageP3);
+
+  std::thread sessionThread(&ChargeStation::updateChargeSession, this);
+  sessionThread.detach();
 }
 
 ChargeStation::~ChargeStation()
@@ -275,7 +280,8 @@ ChargePoint::ChargePoint()
   status = ChargePointStatus::Available;
   authorizationStatus = AuthorizationStatus::Finish;
   vendorErrorCode = 0;
-  proximityPilotState = 0;
+  pilotState = 0;
+  proximityPilotState = 1;
   voltageP1 = 0;
   voltageP2 = 0;
   voltageP3 = 0;

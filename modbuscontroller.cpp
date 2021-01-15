@@ -232,17 +232,20 @@ void ModbusController::set_charge_session(int startTime, int stopTime, int initi
   char data[3];
   int energy = lastEnergy - initialEnergy;
   set_session_energy(energy);
-  time_t startEpoch = startTime;
-  tm *startDateTime = localtime(&startEpoch);
-  snprintf(data, 3, "%02d",startDateTime->tm_hour);
-  ss << data;
-  snprintf(data, 3, "%02d",startDateTime->tm_min);
-  ss << data;
-  snprintf(data, 3, "%02d",startDateTime->tm_sec);
-  ss << data;
-  set_r_register(uint32_t(atoi(ss.str().c_str())), SESSION_START_TIME_REG);
-  ss.clear();
-  ss.str("");
+  if (startTime != 0)
+  {
+    time_t startEpoch = startTime;
+    tm *startDateTime = localtime(&startEpoch);
+    snprintf(data, 3, "%02d",startDateTime->tm_hour);
+    ss << data;
+    snprintf(data, 3, "%02d",startDateTime->tm_min);
+    ss << data;
+    snprintf(data, 3, "%02d",startDateTime->tm_sec);
+    ss << data;
+    set_r_register(uint32_t(atoi(ss.str().c_str())), SESSION_START_TIME_REG);
+    ss.clear();
+    ss.str("");
+  }
   if (stopTime == 0)
   {
     set_r_register(uint32_t(0), SESSION_END_TIME);
@@ -263,31 +266,26 @@ void ModbusController::set_charge_session(int startTime, int stopTime, int initi
 
 void ModbusController::set_serial(std::string serial)
 {
-  logNotice("set serial: %s\n",serial.c_str());
   set_r_register(serial, SERIAL_NUMBER_REG);
 }
 void ModbusController::set_brand(std::string brand)
 {
-  logNotice("set brand: %s\n",brand.c_str());
   set_r_register(brand, BRAND_REG);
 }
 
 void ModbusController::set_model(std::string model)
 {
-  logNotice("set model: %s\n",model.c_str());
   set_r_register(model, MODEL_REG);
 }
 
 void ModbusController::set_phase(int phase)
 {
-  logNotice("set phase number: %d\n",phase);
   set_r_register((uint16_t)phase, NUMBER_OF_PHASES_REG);
 }
 
 void ModbusController::set_firmware_version(std::string version)
 {
-  logNotice("set fw version: %s\n",version.c_str());
-  set_r_register(version, MODEL_REG);
+  set_r_register(version, FIRMWARE_VERSION_REG);
 }
 
 void ModbusController::update_datetime()
