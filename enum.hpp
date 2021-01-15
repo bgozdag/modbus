@@ -7,6 +7,7 @@ enum ChargeStationStatus
 {
   Normal,
   Initializing,
+  Onboarding,
   WaitingForConfiguration,
   InstallingFirmware,
   WaitingForMasterAddition,
@@ -19,6 +20,7 @@ std::unordered_map<std::string,
   ChargeStationStatus> const chargeStationStatusTable = {
     {"Normal", ChargeStationStatus::Normal},
     {"Initializing", ChargeStationStatus::Initializing},
+    {"Onboarding", ChargeStationStatus::Onboarding},
     {"WaitingForConfiguration", ChargeStationStatus::WaitingForConfiguration},
     {"InstallingFirmware", ChargeStationStatus::InstallingFirmware},
     {"WaitingForMasterAddition", ChargeStationStatus::WaitingForMasterAddition},

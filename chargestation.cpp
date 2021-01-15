@@ -276,7 +276,6 @@ void ChargeStation::start()
 
 ChargePoint::ChargePoint()
 {
-  pilotState = 0;
   status = ChargePointStatus::Available;
   authorizationStatus = AuthorizationStatus::Finish;
   vendorErrorCode = 0;
