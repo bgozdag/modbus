@@ -11,6 +11,7 @@
 #include <unistd.h>
 
 #define AGENT_DB_PATH "/var/lib/vestel/agent.db"
+#define WEBCONFIG_DB_PATH "/var/lib/vestel/webconfig.db"
 #define VFACTORY_DB_PATH "/run/media/mmcblk1p3/vfactory.db"
 #define SYSTEM_DB_PATH "/usr/lib/vestel/system.db"
 
@@ -153,9 +154,23 @@ public:
     }
     return 0;
   };
+  static int webconfig_callback(void *data, int argc, char **argv, char **azColName)
+  {
+    ChargeStation *chargeStation = (ChargeStation *)data;
+    if (argv != nullptr) {
+      if(argv[0] != nullptr)
+      {
+        chargeStation->chargePointId = argv[0];
+      }
+    }
+    return 0;
+  };
   void updateStation(json msg);
   void getStatusNotification(json msg);
-  void readValuesFromDb();
+  void readAgentDb();
+  void readSystemDb();
+  void readWebconfigDb();
+  void readVfactoryDb();
   void getSerial(json msg);
   void getPhase(json msg);
   void getPowerOptimizer(json msg);
@@ -174,6 +189,7 @@ public:
   std::string brand;
   std::string model;
   std::string fwVersion;
+  std::string chargePointId;
 };
 
 #endif

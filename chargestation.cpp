@@ -64,9 +64,13 @@ ChargeStation::ChargeStation()
   modbusController = new ModbusController("127.0.0.1", 502);
   messageController = new MessageController("modbus");
 
-  readValuesFromDb();
+  readVfactoryDb();
+  readAgentDb();
+  readSystemDb();
+  readWebconfigDb();
 
   // logDebug("serial: %s\n",serial.c_str());
+  // logDebug("chargePointId: %s\n", chargePointId.c_str());
   // logDebug("model: %s\n",model.c_str());
   // logDebug("brand: %s\n",brand.c_str());
   // logDebug("fwVersion: %s\n",fwVersion.c_str());
@@ -112,6 +116,7 @@ ChargeStation::ChargeStation()
   this->modbusController->set_model(model);
   this->modbusController->set_phase(phaseType);
   this->modbusController->set_firmware_version(fwVersion);
+  this->modbusController->set_chargepoint_id(chargePointId);
   this->modbusController->set_equipment_state(status, chargePoint.status);
   this->modbusController->set_cable_state(chargePoint.pilotState, chargePoint.proximityPilotState);
   this->modbusController->set_chargepoint_states(
@@ -125,7 +130,7 @@ ChargeStation::ChargeStation()
   sessionThread.detach();
 }
 
-void ChargeStation::readValuesFromDb()
+void ChargeStation::readAgentDb()
 {
   sqlite3 *db;
   char *zErrMsg = 0;
@@ -149,8 +154,38 @@ void ChargeStation::readValuesFromDb()
     }
   }
   sqlite3_close(db);
+}
 
-  query =
+void ChargeStation::readSystemDb()
+{
+  sqlite3 *db;
+  char *zErrMsg = 0;
+  int rc;
+  std::string query =
+      "SELECT hmiVersion FROM deviceInfo WHERE ID=1";
+  rc = sqlite3_open(SYSTEM_DB_PATH, &db);
+
+  if (rc != SQLITE_OK)
+  {
+    logErr("Can't open database: %s %s\n", SYSTEM_DB_PATH, sqlite3_errmsg(db));
+  }
+  else
+  {
+    int check = sqlite3_exec(db, query.c_str(), system_callback, this, &zErrMsg);
+    if (check != SQLITE_OK)
+    {
+      logErr("sql exec error: %s\n", sqlite3_errmsg(db));
+    }
+  }
+  sqlite3_close(db);
+}
+
+void ChargeStation::readVfactoryDb()
+{
+  sqlite3 *db;
+  char *zErrMsg = 0;
+  int rc;
+  std::string query =
       "SELECT model,customer FROM deviceDetails WHERE id=1";
   rc = sqlite3_open(VFACTORY_DB_PATH, &db);
 
@@ -167,18 +202,24 @@ void ChargeStation::readValuesFromDb()
     }
   }
   sqlite3_close(db);
+}
 
-  query =
-      "SELECT hmiVersion FROM deviceInfo WHERE ID=1";
-  rc = sqlite3_open(SYSTEM_DB_PATH, &db);
+void ChargeStation::readWebconfigDb()
+{
+  sqlite3 *db;
+  char *zErrMsg = 0;
+  int rc;
+  std::string query =
+      "SELECT chargePointId FROM ocppSettings WHERE ID=1";
+  rc = sqlite3_open(WEBCONFIG_DB_PATH, &db);
 
   if (rc != SQLITE_OK)
   {
-    logErr("Can't open database: %s %s\n", SYSTEM_DB_PATH, sqlite3_errmsg(db));
+    logErr("Can't open database: %s %s\n", WEBCONFIG_DB_PATH, sqlite3_errmsg(db));
   }
   else
   {
-    int check = sqlite3_exec(db, query.c_str(), system_callback, this, &zErrMsg);
+    int check = sqlite3_exec(db, query.c_str(), webconfig_callback, this, &zErrMsg);
     if (check != SQLITE_OK)
     {
       logErr("sql exec error: %s\n", sqlite3_errmsg(db));
@@ -248,6 +289,11 @@ void ChargeStation::updateStation(json msg)
     else if (type.compare("powerOptimizerLimits") == 0)
     {
       getPowerOptimizerLimits(msg);
+    }
+    else if (type.compare("ocppUpdate") == 0)
+    {
+      readWebconfigDb();
+      this->modbusController->set_chargepoint_id(chargePointId);
     }
   }
   else

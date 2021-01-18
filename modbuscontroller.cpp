@@ -226,6 +226,11 @@ void ModbusController::set_meter_values(int energy, int currentP1, int currentP2
   set_r_register(uint32_t(powerP1 + powerP2 + powerP3), ACTIVE_POWER_TOTAL_REG);
 }
 
+void ModbusController::set_chargepoint_id(std::string id)
+{
+  set_r_register(id, CHARGEPOINT_ID_REG);
+}
+
 void ModbusController::set_charge_session(int startTime, int stopTime, int initialEnergy, int lastEnergy, ChargeSessionStatus status)
 {
   std::stringstream ss;

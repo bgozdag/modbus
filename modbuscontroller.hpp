@@ -14,6 +14,7 @@
 #define MAX_CONNECTION 1
 
 #define SERIAL_NUMBER_REG 100
+#define CHARGEPOINT_ID_REG 130
 #define BRAND_REG 190
 #define MODEL_REG 210
 #define FIRMWARE_VERSION_REG 230
@@ -60,6 +61,7 @@ public:
   void set_cable_state(int pilotState, int proximityState);
   void set_session_duration(int duration);
   void set_session_energy(int energy);
+  void set_chargepoint_id(std::string id);
   void listen();
 
 private:
