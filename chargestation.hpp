@@ -155,6 +155,11 @@ public:
   };
   void updateStation(json msg);
   void getStatusNotification(json msg);
+  void readValuesFromDb();
+  void getSerial(json msg);
+  void getPhase(json msg);
+  void getPowerOptimizer(json msg);
+  void getPowerOptimizerLimits(json msg);
   void updateChargeSession();
   void start();
   ModbusController *modbusController;

@@ -5,7 +5,7 @@ ModbusController::ModbusController(std::string h, int p)
   host = h;
   port = p;
   context = modbus_new_tcp(host.c_str(), port);
-  map = modbus_mapping_new(0, 0, 6000, 6000);
+  map = modbus_mapping_new(0, 0, 6001, 6001);
   if (map == NULL)
   {
     logEmerg("failed to allocate the map: %s\n", modbus_strerror(errno));
@@ -213,10 +213,10 @@ void ModbusController::set_equipment_state(ChargeStationStatus stationStatus, Ch
 
 void ModbusController::set_meter_values(int energy, int currentP1, int currentP2, int currentP3, int powerP1, int powerP2, int powerP3, int voltageP1, int voltageP2, int voltageP3)
 {
-  set_r_register(uint32_t(round((float)energy / 10.0)), METER_READING_REG);
-  set_r_register(uint16_t(round((float)currentP1 / 1000.0)), CURRENT_L1_REG);
-  set_r_register(uint16_t(round((float)currentP2 / 1000.0)), CURRENT_L2_REG);
-  set_r_register(uint16_t(round((float)currentP3 / 1000.0)), CURRENT_L3_REG);
+  set_r_register(uint32_t(round((float)energy / 10000.0)), METER_READING_REG);
+  set_r_register(uint16_t(currentP1), CURRENT_L1_REG);
+  set_r_register(uint16_t(currentP2), CURRENT_L2_REG);
+  set_r_register(uint16_t(currentP3), CURRENT_L3_REG);
   set_r_register(uint16_t(round((float)voltageP1 / 1000.0)), VOLTAGE_L1_REG);
   set_r_register(uint16_t(round((float)voltageP2 / 1000.0)), VOLTAGE_L2_REG);
   set_r_register(uint16_t(round((float)voltageP3 / 1000.0)), VOLTAGE_L3_REG);

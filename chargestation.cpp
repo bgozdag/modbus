@@ -64,64 +64,7 @@ ChargeStation::ChargeStation()
   modbusController = new ModbusController("127.0.0.1", 502);
   messageController = new MessageController("modbus");
 
-  sqlite3 *db;
-  char *zErrMsg = 0;
-  int rc;
-  std::string query =
-      "SELECT chargeStation.phaseType,chargeStation.powerOptimizer,chargeStation.powerOptimizerMin,"
-      "chargeStation.powerOptimizerMax,deviceDetails.acpwSerialNumber "
-      "FROM chargeStation INNER JOIN deviceDetails USING(ID)";
-  rc = sqlite3_open(AGENT_DB_PATH, &db);
-
-  if (rc != SQLITE_OK)
-  {
-    logErr("Can't open database: %s %s\n", AGENT_DB_PATH, sqlite3_errmsg(db));
-  }
-  else
-  {
-    int check = sqlite3_exec(db, query.c_str(), agent_callback, this, &zErrMsg);
-    if (check != SQLITE_OK)
-    {
-      logErr("sql exec error: %s\n", sqlite3_errmsg(db));
-    }
-  }
-  sqlite3_close(db);
-
-  query =
-      "SELECT model,customer FROM deviceDetails WHERE id=1";
-  rc = sqlite3_open(VFACTORY_DB_PATH, &db);
-
-  if (rc != SQLITE_OK)
-  {
-    logErr("Can't open database: %s %s\n", VFACTORY_DB_PATH, sqlite3_errmsg(db));
-  }
-  else
-  {
-    int check = sqlite3_exec(db, query.c_str(), vfactory_callback, this, &zErrMsg);
-    if (check != SQLITE_OK)
-    {
-      logErr("sql exec error: %s\n", sqlite3_errmsg(db));
-    }
-  }
-  sqlite3_close(db);
-
-  query =
-      "SELECT hmiVersion FROM deviceInfo WHERE ID=1";
-  rc = sqlite3_open(SYSTEM_DB_PATH, &db);
-
-  if (rc != SQLITE_OK)
-  {
-    logErr("Can't open database: %s %s\n", SYSTEM_DB_PATH, sqlite3_errmsg(db));
-  }
-  else
-  {
-    int check = sqlite3_exec(db, query.c_str(), system_callback, this, &zErrMsg);
-    if (check != SQLITE_OK)
-    {
-      logErr("sql exec error: %s\n", sqlite3_errmsg(db));
-    }
-  }
-  sqlite3_close(db);
+  readValuesFromDb();
 
   // logDebug("serial: %s\n",serial.c_str());
   // logDebug("model: %s\n",model.c_str());
@@ -182,6 +125,68 @@ ChargeStation::ChargeStation()
   sessionThread.detach();
 }
 
+void ChargeStation::readValuesFromDb()
+{
+  sqlite3 *db;
+  char *zErrMsg = 0;
+  int rc;
+  std::string query =
+      "SELECT chargeStation.phaseType,chargeStation.powerOptimizer,chargeStation.powerOptimizerMin,"
+      "chargeStation.powerOptimizerMax,deviceDetails.acpwSerialNumber "
+      "FROM chargeStation INNER JOIN deviceDetails USING(ID)";
+  rc = sqlite3_open(AGENT_DB_PATH, &db);
+
+  if (rc != SQLITE_OK)
+  {
+    logErr("Can't open database: %s %s\n", AGENT_DB_PATH, sqlite3_errmsg(db));
+  }
+  else
+  {
+    int check = sqlite3_exec(db, query.c_str(), agent_callback, this, &zErrMsg);
+    if (check != SQLITE_OK)
+    {
+      logErr("sql exec error: %s\n", sqlite3_errmsg(db));
+    }
+  }
+  sqlite3_close(db);
+
+  query =
+      "SELECT model,customer FROM deviceDetails WHERE id=1";
+  rc = sqlite3_open(VFACTORY_DB_PATH, &db);
+
+  if (rc != SQLITE_OK)
+  {
+    logErr("Can't open database: %s %s\n", VFACTORY_DB_PATH, sqlite3_errmsg(db));
+  }
+  else
+  {
+    int check = sqlite3_exec(db, query.c_str(), vfactory_callback, this, &zErrMsg);
+    if (check != SQLITE_OK)
+    {
+      logErr("sql exec error: %s\n", sqlite3_errmsg(db));
+    }
+  }
+  sqlite3_close(db);
+
+  query =
+      "SELECT hmiVersion FROM deviceInfo WHERE ID=1";
+  rc = sqlite3_open(SYSTEM_DB_PATH, &db);
+
+  if (rc != SQLITE_OK)
+  {
+    logErr("Can't open database: %s %s\n", SYSTEM_DB_PATH, sqlite3_errmsg(db));
+  }
+  else
+  {
+    int check = sqlite3_exec(db, query.c_str(), system_callback, this, &zErrMsg);
+    if (check != SQLITE_OK)
+    {
+      logErr("sql exec error: %s\n", sqlite3_errmsg(db));
+    }
+  }
+  sqlite3_close(db);
+}
+
 ChargeStation::~ChargeStation()
 {
   delete messageController;
@@ -226,6 +231,24 @@ void ChargeStation::updateStation(json msg)
       this->modbusController->set_charge_session(chargePoint.chargeSession.startTime, chargePoint.chargeSession.stopTime,
         chargePoint.chargeSession.initialEnergy, chargePoint.chargeSession.lastEnergy, chargePoint.chargeSession.status);
     }
+    else if (type.compare("serialNumber") == 0)
+    {
+      getSerial(msg);
+      this->modbusController->set_serial(serial);
+    }
+    else if (type.compare("phaseType") == 0)
+    {
+      getPhase(msg);
+      this->modbusController->set_phase(phaseType);
+    }
+    else if (type.compare("powerOptimizer") == 0)
+    {
+      getPowerOptimizer(msg);
+    }
+    else if (type.compare("powerOptimizerLimits") == 0)
+    {
+      getPowerOptimizerLimits(msg);
+    }
   }
   else
   {
@@ -256,6 +279,27 @@ void ChargeStation::getStatusNotification(json msg)
   msg.at("status").get_to(status);
   auto it = chargeStationStatusTable.find(status);
   this->status = it->second;
+}
+
+void ChargeStation::getSerial(json msg)
+{
+  msg.at("data").at("value").get_to(serial);
+}
+
+void ChargeStation::getPhase(json msg)
+{
+  msg.at("data").at("value").get_to(phaseType);
+}
+
+void ChargeStation::getPowerOptimizer(json msg)
+{
+  msg.at("data").at("value").get_to(powerOptimizer);
+}
+
+void ChargeStation::getPowerOptimizerLimits(json msg)
+{
+  msg.at("data").at("min").get_to(powerOptimizerMin);
+  msg.at("data").at("max").get_to(powerOptimizerMax);
 }
 
 void ChargeStation::start()
