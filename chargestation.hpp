@@ -78,8 +78,6 @@ public:
         chargePoint->minCurrent = atoi(argv[17]);
         chargePoint->maxCurrent = atoi(argv[18]);
         chargePoint->availableCurrent = atoi(argv[19]);
-        auto it3 = authorizationStatusTable.find(argv[20]);
-        chargePoint->authorizationStatus = it3->second;
       }
     }
     return 0;
@@ -87,6 +85,7 @@ public:
   void getStatusNotification(json msg);
   void getMeterValues(json msg);
   void getPilotStates(json msg);
+  void getAuthorizationStatus(json msg);
   ChargeSession chargeSession;
   ChargePointStatus status;
   AuthorizationStatus authorizationStatus;
@@ -127,6 +126,7 @@ public:
         chargeStation->powerOptimizerMin = atoi(argv[2]);
         chargeStation->powerOptimizerMax = atoi(argv[3]);
         chargeStation->serial = argv[4];
+        chargeStation->acpwVersion = argv[5];
       }
     }
     return 0;
@@ -149,7 +149,7 @@ public:
     if (argv != nullptr) {
       if(argv[0] != nullptr)
       {
-        chargeStation->fwVersion = argv[0];
+        chargeStation->hmiVersion = argv[0];
       }
     }
     return 0;
@@ -188,7 +188,8 @@ public:
   std::string serial;
   std::string brand;
   std::string model;
-  std::string fwVersion;
+  std::string hmiVersion;
+  std::string acpwVersion;
   std::string chargePointId;
 };
 

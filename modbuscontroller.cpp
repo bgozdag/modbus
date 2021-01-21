@@ -205,6 +205,14 @@ void ModbusController::set_equipment_state(ChargeStationStatus stationStatus, Ch
   {
     set_r_register(uint16_t(2), EQUIPMENT_STATE_REG);
   }
+  else if (stationStatus == ChargeStationStatus::InstallingFirmware)
+  {
+    set_r_register(uint16_t(4), EQUIPMENT_STATE_REG);
+  }
+  else if (pointStatus == ChargePointStatus::Unavailable)
+  {
+    set_r_register(uint16_t(3), EQUIPMENT_STATE_REG);
+  }
   else
   {
     set_r_register(uint16_t(1), EQUIPMENT_STATE_REG);
@@ -288,9 +296,9 @@ void ModbusController::set_phase(int phase)
   set_r_register((uint16_t)phase, NUMBER_OF_PHASES_REG);
 }
 
-void ModbusController::set_firmware_version(std::string version)
+void ModbusController::set_firmware_version(std::string hmiVersion, std::string acpwVersion)
 {
-  set_r_register(version, FIRMWARE_VERSION_REG);
+  set_r_register(hmiVersion + acpwVersion, FIRMWARE_VERSION_REG);
 }
 
 void ModbusController::update_datetime()

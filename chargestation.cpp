@@ -60,9 +60,10 @@ ChargeStation::ChargeStation()
   serial = "";
   brand = "";
   model = "";
-  fwVersion = "";
+  hmiVersion = "";
+  acpwVersion = "";
   modbusController = new ModbusController("127.0.0.1", 502);
-  messageController = new MessageController("modbus");
+  messageController = new MessageController("MODBUSTCP");
 
   readVfactoryDb();
   readAgentDb();
@@ -73,7 +74,8 @@ ChargeStation::ChargeStation()
   // logDebug("chargePointId: %s\n", chargePointId.c_str());
   // logDebug("model: %s\n",model.c_str());
   // logDebug("brand: %s\n",brand.c_str());
-  // logDebug("fwVersion: %s\n",fwVersion.c_str());
+  // logDebug("hmiVersion: %s\n",hmiVersion.c_str());
+  // logDebug("acpwVersion: %s\n",acpwVersion.c_str());
   // logDebug("ChargeStationStatus: %d\n",status);
   // logDebug("phaseType: %d\n",phaseType);
   // logDebug("powerOptimizer: %d\n",powerOptimizer);
@@ -115,9 +117,8 @@ ChargeStation::ChargeStation()
   this->modbusController->set_brand(brand);
   this->modbusController->set_model(model);
   this->modbusController->set_phase(phaseType);
-  this->modbusController->set_firmware_version(fwVersion);
+  this->modbusController->set_firmware_version(hmiVersion, acpwVersion);
   this->modbusController->set_chargepoint_id(chargePointId);
-  this->modbusController->set_equipment_state(status, chargePoint.status);
   this->modbusController->set_cable_state(chargePoint.pilotState, chargePoint.proximityPilotState);
   this->modbusController->set_chargepoint_states(
         chargePoint.status, chargePoint.vendorErrorCode, chargePoint.pilotState);
@@ -137,7 +138,7 @@ void ChargeStation::readAgentDb()
   int rc;
   std::string query =
       "SELECT chargeStation.phaseType,chargeStation.powerOptimizer,chargeStation.powerOptimizerMin,"
-      "chargeStation.powerOptimizerMax,deviceDetails.acpwSerialNumber "
+      "chargeStation.powerOptimizerMax,deviceDetails.acpwSerialNumber, deviceDetails.acpwVersion "
       "FROM chargeStation INNER JOIN deviceDetails USING(ID)";
   rc = sqlite3_open(AGENT_DB_PATH, &db);
 
@@ -295,6 +296,10 @@ void ChargeStation::updateStation(json msg)
       readWebconfigDb();
       this->modbusController->set_chargepoint_id(chargePointId);
     }
+    else if (type.compare("AuthorizationStatus") == 0)
+    {
+      chargePoint.getAuthorizationStatus(msg);
+    }
   }
   else
   {
@@ -395,7 +400,7 @@ ChargePoint::ChargePoint()
       "SELECT controlPilotState,proximityPilotState,status,vendorErrorCode,voltageP1,"
       "voltageP2,voltageP3,currentP1,currentP2,currentP3,activePowerP1,"
       "activePowerP2,activePowerP3,activeEnergyP1,activeEnergyP2,activeEnergyP3,"
-      "availability,minCurrent,maxCurrent,availableCurrent,authorizationStatus "
+      "availability,minCurrent,maxCurrent,availableCurrent "
       "FROM chargePoints WHERE chargePointId=1";
   rc = sqlite3_open(AGENT_DB_PATH, &db);
 
@@ -412,6 +417,14 @@ ChargePoint::ChargePoint()
     }
   }
   sqlite3_close(db);
+}
+
+void ChargePoint::getAuthorizationStatus(json msg)
+{
+  std::string status;
+  msg.at("status").get_to(status);
+  auto it = authorizationStatusTable.find(status);
+  this->authorizationStatus = it->second;
 }
 
 void ChargePoint::getStatusNotification(json msg)

@@ -7,7 +7,7 @@
 
 int main()
 {
-  logInit("/var/log/modbus", 5);
+  logInit("/var/log/modbusTCP", 5);
   logNotice("initialized logging\n");
   ChargeStation chargeStation;
   chargeStation.start();

@@ -57,7 +57,7 @@ public:
   void set_model(std::string model);
   void set_phase(int phase);
   void set_charge_session(int startTime, int stopTime, int initialEnergy, int lastEnergy, ChargeSessionStatus status);
-  void set_firmware_version(std::string version);
+  void set_firmware_version(std::string hmiVersion, std::string acpwVersion);
   void set_cable_state(int pilotState, int proximityState);
   void set_session_duration(int duration);
   void set_session_energy(int energy);
