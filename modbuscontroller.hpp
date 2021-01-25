@@ -37,6 +37,7 @@
 #define ACTIVE_POWER_L2_REG 1028
 #define ACTIVE_POWER_L3_REG 1032
 #define METER_READING_REG 1036
+#define SESSION_MAX_CURRENT_REG 1100
 #define SESSION_ENERGY_REG 1502
 #define SESSION_START_TIME_REG 1504
 #define SESSION_DURATION_REG 1508
@@ -52,6 +53,7 @@ public:
   void set_chargepoint_states(ChargePointStatus state, int vendorErrorCode, int pilotState);
   void set_equipment_state(ChargeStationStatus stationStatus, ChargePointStatus pointStatus);
   void set_meter_values(int energy, int currentP1, int currentP2, int currentP3, int powerP1, int powerP2, int powerP3, int voltageP1, int voltageP2, int voltageP3);
+  void set_session_max_current(int current);
   void set_serial(std::string serial);
   void set_brand(std::string brand);
   void set_model(std::string model);

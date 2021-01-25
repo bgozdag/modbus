@@ -78,6 +78,8 @@ public:
         chargePoint->minCurrent = atoi(argv[17]);
         chargePoint->maxCurrent = atoi(argv[18]);
         chargePoint->availableCurrent = atoi(argv[19]);
+        chargePoint->currentOfferedToEv = atoi(argv[20]);
+        chargePoint->currentOfferedToEvReason = static_cast<CurrentOfferedToEvReason>(atoi(argv[21]));
       }
     }
     return 0;
@@ -86,6 +88,7 @@ public:
   void getMeterValues(json msg);
   void getPilotStates(json msg);
   void getAuthorizationStatus(json msg);
+  void getCurrentOffered(json msg);
   ChargeSession chargeSession;
   ChargePointStatus status;
   AuthorizationStatus authorizationStatus;
@@ -107,6 +110,8 @@ public:
   ChargePointAvailability availability;
   int minCurrent;
   int maxCurrent;
+  int currentOfferedToEv;
+  CurrentOfferedToEvReason currentOfferedToEvReason;
   int availableCurrent;
 };
 

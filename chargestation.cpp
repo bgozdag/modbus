@@ -107,9 +107,12 @@ ChargeStation::ChargeStation()
   // logDebug("stopTime: %d\n",chargePoint.chargeSession.stopTime);
   // logDebug("initialEnergy: %d\n",chargePoint.chargeSession.initialEnergy);
   // logDebug("lastEnergy: %d\n",chargePoint.chargeSession.lastEnergy);
+  // logDebug("current: %d\n", chargePoint.currentOfferedToEv);
+  // logDebug("reason: %d\n", chargePoint.currentOfferedToEvReason);
   // logNotice("initialized charge station\n");
   this->modbusController->set_serial(serial);
   this->modbusController->set_equipment_state(status, chargePoint.status);
+  this->modbusController->set_session_max_current(chargePoint.currentOfferedToEv);
   this->modbusController->set_cable_state(chargePoint.pilotState, chargePoint.proximityPilotState);
   this->modbusController->set_charge_session(chargePoint.chargeSession.startTime,
         chargePoint.chargeSession.stopTime, chargePoint.chargeSession.initialEnergy,
@@ -300,6 +303,11 @@ void ChargeStation::updateStation(json msg)
     {
       chargePoint.getAuthorizationStatus(msg);
     }
+    else if (type.compare("currentOfferedEv") == 0)
+    {
+      chargePoint.getCurrentOffered(msg);
+      this->modbusController->set_session_max_current(chargePoint.currentOfferedToEv);
+    }
   }
   else
   {
@@ -392,6 +400,8 @@ ChargePoint::ChargePoint()
   minCurrent = 0;
   maxCurrent = 0;
   availableCurrent = 0;
+  currentOfferedToEv = 0;
+  currentOfferedToEvReason = CurrentOfferedToEvReason::NormalReason;
 
   sqlite3 *db;
   char *zErrMsg = 0;
@@ -400,7 +410,7 @@ ChargePoint::ChargePoint()
       "SELECT controlPilotState,proximityPilotState,status,vendorErrorCode,voltageP1,"
       "voltageP2,voltageP3,currentP1,currentP2,currentP3,activePowerP1,"
       "activePowerP2,activePowerP3,activeEnergyP1,activeEnergyP2,activeEnergyP3,"
-      "availability,minCurrent,maxCurrent,availableCurrent "
+      "availability,minCurrent,maxCurrent,availableCurrent, currentOfferedValue, currentOfferedReason "
       "FROM chargePoints WHERE chargePointId=1";
   rc = sqlite3_open(AGENT_DB_PATH, &db);
 
@@ -425,6 +435,14 @@ void ChargePoint::getAuthorizationStatus(json msg)
   msg.at("status").get_to(status);
   auto it = authorizationStatusTable.find(status);
   this->authorizationStatus = it->second;
+}
+
+void ChargePoint::getCurrentOffered(json msg)
+{
+  int reason;
+  msg.at("data").at("value").at("current").get_to(currentOfferedToEv);
+  msg.at("data").at("value").at("reason").get_to(reason);
+  currentOfferedToEvReason = static_cast<CurrentOfferedToEvReason>(reason);
 }
 
 void ChargePoint::getStatusNotification(json msg)

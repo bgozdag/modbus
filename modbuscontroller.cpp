@@ -112,6 +112,11 @@ void ModbusController::set_chargepoint_states(ChargePointStatus state,
   set_r_register(uint16_t(vendorErrorCode), EVSE_FAULT_CODE_REG);
 }
 
+void ModbusController::set_session_max_current(int current)
+{
+  set_r_register(uint16_t(current), SESSION_MAX_CURRENT_REG);
+}
+
 void ModbusController::set_r_register(uint32_t data, int addr)
 {
   uint16_t arr[2];

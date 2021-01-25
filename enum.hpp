@@ -97,4 +97,19 @@ std::unordered_map<std::string, ChargePointAvailability> const
     {"Operative", ChargePointAvailability::Operative}
   };
 
+enum CurrentOfferedToEvReason
+{
+  NormalReason,
+  UserMaxCurrent,
+  ModbusTcpCurrent,
+  UnbalancedLoad,
+  Temperature,
+  PowerOptimizer,
+  LoadShedding,
+  OcppSmartCharging,
+  AppAvailableCurrent,
+  DlmAvailableCurrent,
+  ChargingCableCapacity
+};
+
 #endif
