@@ -89,6 +89,8 @@ public:
   void getPilotStates(json msg);
   void getAuthorizationStatus(json msg);
   void getCurrentOffered(json msg);
+  void getMinCurrent(json msg);
+  void getMaxCurrent(json msg);
   ChargeSession chargeSession;
   ChargePointStatus status;
   AuthorizationStatus authorizationStatus;

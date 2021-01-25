@@ -117,6 +117,16 @@ void ModbusController::set_session_max_current(int current)
   set_r_register(uint16_t(current), SESSION_MAX_CURRENT_REG);
 }
 
+void ModbusController::set_evse_max_current(int current)
+{
+  set_r_register(uint16_t(current), EVSE_MAX_CURRENT_REG);
+}
+
+void ModbusController::set_evse_min_current(int current)
+{
+  set_r_register(uint16_t(current), EVSE_MIN_CURRENT_REG);
+}
+
 void ModbusController::set_r_register(uint32_t data, int addr)
 {
   uint16_t arr[2];

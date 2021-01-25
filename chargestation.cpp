@@ -113,6 +113,8 @@ ChargeStation::ChargeStation()
   this->modbusController->set_serial(serial);
   this->modbusController->set_equipment_state(status, chargePoint.status);
   this->modbusController->set_session_max_current(chargePoint.currentOfferedToEv);
+  this->modbusController->set_evse_max_current(chargePoint.maxCurrent);
+  this->modbusController->set_evse_min_current(chargePoint.minCurrent);
   this->modbusController->set_cable_state(chargePoint.pilotState, chargePoint.proximityPilotState);
   this->modbusController->set_charge_session(chargePoint.chargeSession.startTime,
         chargePoint.chargeSession.stopTime, chargePoint.chargeSession.initialEnergy,
@@ -308,6 +310,16 @@ void ChargeStation::updateStation(json msg)
       chargePoint.getCurrentOffered(msg);
       this->modbusController->set_session_max_current(chargePoint.currentOfferedToEv);
     }
+    else if (type.compare("minCurrent") == 0)
+    {
+      chargePoint.getMinCurrent(msg);
+      this->modbusController->set_evse_min_current(chargePoint.minCurrent);
+    }
+    else if (type.compare("maximumCurrent") == 0)
+    {
+      chargePoint.getMaxCurrent(msg);
+      this->modbusController->set_evse_max_current(chargePoint.maxCurrent);
+    }
   }
   else
   {
@@ -435,6 +447,16 @@ void ChargePoint::getAuthorizationStatus(json msg)
   msg.at("status").get_to(status);
   auto it = authorizationStatusTable.find(status);
   this->authorizationStatus = it->second;
+}
+
+void ChargePoint::getMinCurrent(json msg)
+{
+  msg.at("data").at("value").get_to(minCurrent);
+}
+
+void ChargePoint::getMaxCurrent(json msg)
+{
+  msg.at("data").at("value").get_to(maxCurrent);
 }
 
 void ChargePoint::getCurrentOffered(json msg)
