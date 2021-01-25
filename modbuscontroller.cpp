@@ -74,7 +74,7 @@ void ModbusController::set_chargepoint_states(ChargePointStatus state,
   }
   else if (state == ChargePointStatus::Charging)
   {
-    set_r_register(uint16_t(3), CHARGEPOINT_STATE_REG);
+    set_r_register(uint16_t(2), CHARGEPOINT_STATE_REG);
     set_r_register(uint16_t(1), CHARGING_STATE_REG);
   }
   else if (state == ChargePointStatus::SuspendedEVSE)
@@ -84,29 +84,27 @@ void ModbusController::set_chargepoint_states(ChargePointStatus state,
   }
   else if (state == ChargePointStatus::SuspendedEV)
   {
-    set_r_register(uint16_t(5), CHARGEPOINT_STATE_REG);
+    set_r_register(uint16_t(3), CHARGEPOINT_STATE_REG);
     set_r_register(uint16_t(0), CHARGING_STATE_REG);
   }
   else if (state == ChargePointStatus::Finishing)
   {
-    if (pilotState == 0)
-    {
-      set_r_register(uint16_t(0), CHARGEPOINT_STATE_REG);
-    }
-    else if (pilotState == 2)
-    {
-      set_r_register(uint16_t(6), CHARGEPOINT_STATE_REG);
-    }
+    set_r_register(uint16_t(5), CHARGEPOINT_STATE_REG);
     set_r_register(uint16_t(0), CHARGING_STATE_REG);
   }
   else if (state == ChargePointStatus::Reserved)
   {
-    set_r_register(uint16_t(8), CHARGEPOINT_STATE_REG);
+    set_r_register(uint16_t(6), CHARGEPOINT_STATE_REG);
+    set_r_register(uint16_t(0), CHARGING_STATE_REG);
+  }
+  else if (state == ChargePointStatus::Unavailable)
+  {
+    set_r_register(uint16_t(7), CHARGEPOINT_STATE_REG);
     set_r_register(uint16_t(0), CHARGING_STATE_REG);
   }
   else if (state == ChargePointStatus::Faulted)
   {
-    set_r_register(uint16_t(7), CHARGEPOINT_STATE_REG);
+    set_r_register(uint16_t(8), CHARGEPOINT_STATE_REG);
     set_r_register(uint16_t(0), CHARGING_STATE_REG);
   }
   set_r_register(uint16_t(vendorErrorCode), EVSE_FAULT_CODE_REG);
@@ -120,6 +118,7 @@ void ModbusController::set_session_max_current(int current)
 void ModbusController::set_evse_max_current(int current)
 {
   set_r_register(uint16_t(current), EVSE_MAX_CURRENT_REG);
+  set_r_register(uint32_t(230*current), CHARGEPOINT_POWER_REG);
 }
 
 void ModbusController::set_evse_min_current(int current)
