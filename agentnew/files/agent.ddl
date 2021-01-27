@@ -56,6 +56,9 @@ CREATE TABLE `chargePoints` (
 	`currentOfferedValue` INTEGER DEFAULT 0,
 	`currentOfferedReason` INTEGER DEFAULT 0,
 	`proximityPilotCurrent` INTEGER DEFAULT 0,
+	`failsafeCurrent` INTEGER DEFAULT 0,
+	`failsafeTimeout` INTEGER DEFAULT 0,
+	`modbusTcpCurrent` INTEGER DEFAULT 0,
 	PRIMARY KEY(`chargePointId`)
 );
 

@@ -261,7 +261,7 @@ class MessageMediator(Mediator):
                 self.charge_station.get_message(message, message_type)
             else:
                 self.charge_station.get_message(message, message_type)
-                
+
         elif requester == self.configuration_manager:
             self.charge_station.get_configuration(message, message_type)
         elif requester == self.drive_green_manager:
@@ -879,7 +879,8 @@ class ChargePoint:
                  error_code=None, vendor_error_code=0, availability=None, min_current=0, max_current=0,
                  available_current=0, lockable_cable=0, reservation_status=Status.DISABLED,
                  expiry_date="", id_tag="", reservation_id="", external_charge=1, current_offered_value=0, authorization_status=AuthorizationStatus.FINISH,
-                 authorization_uid=None, current_offered_reason=CurrentOfferedToEvReason.NORMAL, proximity_pilot_current=0):
+                 authorization_uid=None, current_offered_reason=CurrentOfferedToEvReason.NORMAL, proximity_pilot_current=0,
+                 failsafe_current=0, failsafe_timeout=0, modbustcp_current=0):
 
         self.charge_station = charge_station
         self.id = cp_id
@@ -910,6 +911,9 @@ class ChargePoint:
         self.minimum_current = min_current
         self.maximum_current = max_current
         self._proximity_pilot_current = proximity_pilot_current
+        self._failsafe_current = failsafe_current
+        self._failsafe_timeout = failsafe_timeout
+        self._modbustcp_current = modbustcp_current
         self._available_current = available_current
         self._lockable_cable = lockable_cable
         self._reservation = Reservation(reservation_status, expiry_date, id_tag, reservation_id)
@@ -944,7 +948,8 @@ class ChargePoint:
                     active_energy_p2, active_energy_p3, last_update, availability, \
                     min_current, max_current, available_current, lockable_cable, \
                     reservation_status, expiry_date, id_tag, reservation_id, external_charge, \
-                    current_offered_value, current_offered_reason, proximity_pilot_current = row
+                    current_offered_value, current_offered_reason, proximity_pilot_current, \
+                    failsafe_current, failsafe_timeout, modbustcp_current = row
 
                 self.id = charge_point_id
                 self._control_pilot_state = ControlPilotStates(control_pilot_state)
@@ -972,8 +977,11 @@ class ChargePoint:
                 self._current_offered_value = current_offered_value
                 self._current_offered_reason = CurrentOfferedToEvReason(current_offered_reason)
                 self._proximity_pilot_current = proximity_pilot_current
-                
-        else:        
+                self._failsafe_current = failsafe_current
+                self._failsafe_timeout = failsafe_timeout
+                self._modbustcp_current = modbustcp_current
+
+        else:
             cursor = conn.cursor()
             query = "INSERT INTO chargePoints (chargePointId, controlPilotState, " \
                     "proximityPilotState, status, errorCode, vendorErrorCode, " \
@@ -983,7 +991,7 @@ class ChargePoint:
                     "activeEnergyP1, activeEnergyP2, activeEnergyP3, lastUpdate, availability, " \
                     "minCurrent, maxCurrent, availableCurrent, lockableCable," \
                     "reservationStatus, expiryDate, idTag, reservationId, externalCharge, currentOfferedValue, " \
-                    "currentOfferedReason, proximityPilotCurrent) " \
+                    "currentOfferedReason, proximityPilotCurrent, failsafeCurrent, failsafeTimeout, modbusTcpCurrent) " \
                     "SELECT {cid}, {control_pilot_state}, {proximity_pilot_state}, " \
                     "'{status}', '{error_code}', {vendor_error_code}, {voltage_p1}, " \
                     "{voltage_p2}, {voltage_p3}, {current_p1}, {current_p2}, {current_p3}, " \
@@ -991,14 +999,16 @@ class ChargePoint:
                     "{active_energy_p2}, {active_energy_p3}, {time}, '{availability}', " \
                     "{minimum_current}, {maximum_current}, {available_current}, {lockable_cable}, " \
                     "'{reservation_status}', '{reservation_expiry}', '{reservation_id_tag}', " \
-                    "'{reservation_id}', {external_charge}, {current_offered_value}, {current_offered_reason}, {proximity_pilot_current}" \
+                    "'{reservation_id}', {external_charge}, {current_offered_value}, {current_offered_reason}, {proximity_pilot_current}, " \
+                    "{failsafe_current}, {failsafe_timeout}, {modbustcp_current}" \
                     " WHERE NOT EXISTS (SELECT 1 FROM chargePoints WHERE chargePointId={cid});".format(
                         cid=self.id, control_pilot_state=self.control_pilot_state.value, proximity_pilot_state=self.proximity_pilot_state.value, status=self.status.value, error_code=self.error_code.value,
                         vendor_error_code=self._vendor_error_code, voltage_p1=self.voltage.P1, voltage_p2=self.voltage.P2, voltage_p3=self.voltage.P3, current_p1=self.current.P1, current_p2=self.current.P2, current_p3=self.current.P3,
                         active_power_p1=self.active_power.P1, active_power_p2=self.active_power.P2, active_power_p3=self.active_power.P3, active_energy_p1=self.active_energy.P1, active_energy_p2=self.active_energy.P2, active_energy_p3=self.active_energy.P3,
                         time=time.time(), availability=self.availability.value, minimum_current=self.minimum_current, maximum_current=self.maximum_current, available_current=self.available_current, lockable_cable=self.lockable_cable,
                         reservation_status=self.reservation.reservation_status.value, reservation_expiry=self.reservation.expiry_date, reservation_id_tag=self.reservation.id_tag, reservation_id=self.reservation.reservation_id,
-                        external_charge=self.external_charge, current_offered_value=self.current_offered_value, current_offered_reason=self.current_offered_reason.value, proximity_pilot_current=self.proximity_pilot_current
+                        external_charge=self.external_charge, current_offered_value=self.current_offered_value, current_offered_reason=self.current_offered_reason.value, proximity_pilot_current=self.proximity_pilot_current,
+                        failsafe_current=self.failsafe_current, failsafe_timeout=self.failsafe_timeout, modbustcp_current=self.modbustcp_current
                     )
             cursor.execute(query)
             conn.commit()
@@ -1096,7 +1106,9 @@ class ChargePoint:
                         "availableCurrent={available_current}, lockableCable={lockable_cable}, " \
                         "reservationStatus='{reservation_status}', expiryDate='{expiry_date}', " \
                         "idTag='{id_tag}', reservationId='{reservation_id}', currentOfferedValue={current_offered_value}, " \
-                        "currentOfferedReason={current_offered_reason}, proximityPilotCurrent={proximity_pilot_current} WHERE chargePointId={cid};".format(
+                        "currentOfferedReason={current_offered_reason}, proximityPilotCurrent={proximity_pilot_current}, " \
+                        "failsafeCurrent={failsafe_current}, failsafeTimeout={failsafe_timeout}, modbusTcpCurrent={modbustcp_current} " \
+                        "WHERE chargePointId={cid};".format(
                             control_pilot_state=self.control_pilot_state.value, proximity_pilot_state=self.proximity_pilot_state.value,
                             status=self.status.value, error_code=self.error_code.value, vendor_error_code=self._vendor_error_code, voltage_p1=self.voltage.P1,
                             voltage_p2=self.voltage.P2, voltage_p3=self.voltage.P3, current_p1=self.current.P1, current_p2=self.current.P2, current_p3=self.current.P3,
@@ -1105,7 +1117,8 @@ class ChargePoint:
                             minimum_current=self.minimum_current, maximum_current=self.maximum_current, available_current=self.available_current,lockable_cable=self.lockable_cable,
                             reservation_status=self.reservation.reservation_status.value, expiry_date=self.reservation.expiry_date, id_tag=self.reservation.id_tag,
                             reservation_id=self.reservation.reservation_id, current_offered_reason=self.current_offered_reason.value, current_offered_value=self.current_offered_value,
-                            proximity_pilot_current=self.proximity_pilot_current, cid=self.id
+                            proximity_pilot_current=self.proximity_pilot_current, failsafe_current=self.failsafe_current, failsafe_timeout=self.failsafe_timeout,
+                            modbustcp_current=self.modbustcp_current, cid=self.id
                         )
                 cursor.execute(query)
 
@@ -1303,6 +1316,33 @@ class ChargePoint:
     def proximity_pilot_current(self, value):
         self._proximity_pilot_current = value
         self._report_property_update(self.proximity_pilot_current, "proximityPilotCurrent")
+
+    @property
+    def failsafe_current(self):
+        return self._failsafe_current
+
+    @failsafe_current.setter
+    def failsafe_current(self, value):
+        self._failsafe_current = value
+        self._report_property_update(self.failsafe_current, "failsafeCurrent")
+
+    @property
+    def failsafe_timeout(self):
+        return self._failsafe_timeout
+
+    @failsafe_timeout.setter
+    def failsafe_timeout(self, value):
+        self._failsafe_timeout = value
+        self._report_property_update(self.failsafe_timeout, "failsafeTimeout")
+
+    @property
+    def modbustcp_current(self):
+        return self._modbustcp_current
+
+    @modbustcp_current.setter
+    def modbustcp_current(self, value):
+        self._modbustcp_current = value
+        self._report_property_update(self.modbustcp_current, "modbusTcpCurrent")
 
     @property
     def authorization_mode(self):
@@ -1900,6 +1940,8 @@ class ChargePoint:
         lockable_cable_command.execute()
         proximity_pilot_current_command = QueryStatusCommand(self.charge_station, AcpwCommandId.PROXIMITY_PILOT_CURRENT)
         proximity_pilot_current_command.execute()
+        modbustcp_current_command = QueryStatusCommand(self.charge_station, AcpwCommandId.SET_MODBUSTCP_CURRENT)
+        modbustcp_current_command.execute()
 
         time.sleep(5)  # Wait for acpw message responses
 
@@ -3317,6 +3359,9 @@ class ChargeStation(Requester):
                         elif json_type == "proximityPilotCurrent":
                             self.charge_points[charge_point_id].proximity_pilot_current = json_object['data']['value']
 
+                        elif json_type == "modbusTcpCurrent":
+                            self.charge_points[charge_point_id].modbustcp_current = json_object['data']['value']
+
                         elif json_type == "availableCurrent":
                             self.charge_points[charge_point_id].available_current = json_object['data']['value']
                                 
@@ -4349,7 +4394,8 @@ class AcpwMessageHandler(Requester):
             AcpwCommandId.PEAK_OFFPEAK_INFO.value: self._peak_offpeak_received,
             AcpwCommandId.CURRENT_OFFERED_TO_EV.value: self._current_offered_to_ev_received,
             AcpwCommandId.NUMBER_OF_PHASE.value: self._number_of_phase_received,
-            AcpwCommandId.PROXIMITY_PILOT_CURRENT.value: self._proximity_pilot_current_received
+            AcpwCommandId.PROXIMITY_PILOT_CURRENT.value: self._proximity_pilot_current_received,
+            AcpwCommandId.SET_MODBUSTCP_CURRENT.value: self._modbustcp_current_received
         }
 
         AcpwMessageHandler.crc_table = self.create_crc_table()
@@ -4632,6 +4678,20 @@ class AcpwMessageHandler(Requester):
         }
 
         msg = json.dumps(proximity_pilot_current)
+        logger.info(msg)
+        self.mediator.send(msg, self, MessageTypes.ACPW)
+
+    def _modbustcp_current_received(self, data):
+        val = data[ByteIndex.PAYLOAD.value]
+
+        modbustcp_current = {
+            "type": "modbusTcpCurrent",
+            "data": {
+                "value": val
+            }
+        }
+
+        msg = json.dumps(modbustcp_current)
         logger.info(msg)
         self.mediator.send(msg, self, MessageTypes.ACPW)
 

@@ -46,6 +46,11 @@
 #define SESSION_START_TIME_REG 1504
 #define SESSION_DURATION_REG 1508
 #define SESSION_END_TIME 1512
+#define FAILSAFE_CURRENT_REG 2000
+#define FAILSAFE_TIMEOUT_REG 2002
+#define CHARGING_CURRENT_REG 5004
+#define ALIVE_REGISTER 6000
+
 class ModbusController
 {
 public:
@@ -61,6 +66,10 @@ public:
   void set_evse_max_current(int current);
   void set_cable_max_current(int current);
   void set_session_max_current(int current);
+  void set_failsafe_current(int current);
+  void set_failsafe_timeout(int time);
+  void set_charging_current(int current);
+  void set_alive_register();
   void set_serial(std::string serial);
   void set_brand(std::string brand);
   void set_model(std::string model);

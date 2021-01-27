@@ -135,6 +135,9 @@ ChargeStation::ChargeStation()
         chargePoint.currentP1, chargePoint.currentP2, chargePoint.currentP3,
         chargePoint.activePowerP1, chargePoint.activePowerP2, chargePoint.activePowerP3,
         chargePoint.voltageP1, chargePoint.voltageP2, chargePoint.voltageP3);
+  this->modbusController->set_failsafe_current(chargePoint.failsafeCurrent);
+  this->modbusController->set_failsafe_timeout(chargePoint.failsafeTimeout);
+  this->modbusController->set_charging_current(chargePoint.modbusTcpCurrent);
 
   std::thread sessionThread(&ChargeStation::updateChargeSession, this);
   sessionThread.detach();
@@ -423,6 +426,9 @@ ChargePoint::ChargePoint()
   currentOfferedToEv = 0;
   currentOfferedToEvReason = CurrentOfferedToEvReason::NormalReason;
   cableMaxCurrent = 0;
+  failsafeCurrent = 0;
+  failsafeTimeout = 0;
+  modbusTcpCurrent = 0;
 
   sqlite3 *db;
   char *zErrMsg = 0;
@@ -432,7 +438,7 @@ ChargePoint::ChargePoint()
       "voltageP2,voltageP3,currentP1,currentP2,currentP3,activePowerP1,"
       "activePowerP2,activePowerP3,activeEnergyP1,activeEnergyP2,activeEnergyP3,"
       "availability,minCurrent,maxCurrent,availableCurrent, currentOfferedValue, currentOfferedReason, "
-      "proximityPilotCurrent FROM chargePoints WHERE chargePointId=1";
+      "proximityPilotCurrent, failsafeCurrent, failsafeTimeout, modbusTcpCurrent FROM chargePoints WHERE chargePointId=1";
   rc = sqlite3_open(AGENT_DB_PATH, &db);
 
   if (rc != SQLITE_OK)

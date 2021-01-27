@@ -160,6 +160,18 @@ public:
       {
         chargePoint->cableMaxCurrent = atoi(argv[22]);
       }
+      if(argv[23] != nullptr)
+      {
+        chargePoint->failsafeCurrent = atoi(argv[23]);
+      }
+      if(argv[24] != nullptr)
+      {
+        chargePoint->failsafeTimeout = atoi(argv[24]);
+      }
+      if(argv[25] != nullptr)
+      {
+        chargePoint->modbusTcpCurrent = atoi(argv[25]);
+      }
     }
     return 0;
   };
@@ -196,6 +208,9 @@ public:
   CurrentOfferedToEvReason currentOfferedToEvReason;
   int availableCurrent;
   int cableMaxCurrent;
+  int failsafeCurrent;
+  int failsafeTimeout;
+  int modbusTcpCurrent;
 };
 
 class ChargeStation

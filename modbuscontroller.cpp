@@ -131,6 +131,26 @@ void ModbusController::set_evse_min_current(int current)
   set_r_register(uint16_t(current), EVSE_MIN_CURRENT_REG);
 }
 
+void ModbusController::set_failsafe_current(int current)
+{
+  set_rw_register(uint16_t(current), FAILSAFE_CURRENT_REG);
+}
+
+void ModbusController::set_failsafe_timeout(int time)
+{
+  set_rw_register(uint16_t(time), FAILSAFE_TIMEOUT_REG);
+}
+
+void ModbusController::set_charging_current(int time)
+{
+  set_rw_register(uint16_t(time), FAILSAFE_TIMEOUT_REG);
+}
+
+void ModbusController::set_alive_register()
+{
+  set_rw_register(uint16_t(1), ALIVE_REGISTER);
+}
+
 void ModbusController::set_r_register(uint32_t data, int addr)
 {
   uint16_t arr[2];
