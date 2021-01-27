@@ -141,6 +141,8 @@ ChargeStation::ChargeStation()
 
   std::thread sessionThread(&ChargeStation::updateChargeSession, this);
   sessionThread.detach();
+  std::thread failsafeThread(&ChargeStation::failsafeChecker, this);
+  failsafeThread.detach();
 }
 
 void ChargeStation::readAgentDb()
@@ -397,6 +399,30 @@ void ChargeStation::start()
     json = this->messageController->parse(msg);
     updateStation(json);
     json.clear();
+  }
+}
+
+void ChargeStation::failsafeChecker()
+{
+  int failsafePeriod;
+
+  if (chargePoint.failsafeTimeout == 0)
+  {
+    failsafePeriod = 1;
+  }
+  else
+  {
+    failsafePeriod = round((float)chargePoint.failsafeTimeout / 2.0);
+  }
+  logNotice("failsafe period: %d\n", failsafePeriod);
+  while (1)
+  {
+    if (this->modbusController->map->tab_registers[6000] == 0 and chargePoint.failsafeCurrent != chargePoint.modbusTcpCurrent)
+    {
+      this->messageController->sendModbusTcpCurrent(chargePoint.failsafeCurrent);
+    }
+    this->modbusController->set_alive_register();
+    sleep(failsafePeriod);
   }
 }
 

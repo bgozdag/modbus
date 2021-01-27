@@ -37,3 +37,30 @@ void MessageController::send(std::string msg)
   // logDebug("sending: %s\n", msg.c_str());
   zmq_send(dealer, msg.c_str(), msg.size(), 0);
 }
+
+void MessageController::sendFailsafeCurrent(int current)
+{
+  json j;
+  j["type"] = "failsafeCurrent";
+  j["data"]["value"] = current;
+  send(j.dump());
+  logNotice("sent failsafeCurrent: %d\n", current);
+}
+
+void MessageController::sendFailsafeTimeout(int time)
+{
+  json j;
+  j["type"] = "failsafeTimeout";
+  j["data"]["value"] = time;
+  send(j.dump());
+  logNotice("sent failsafeTimeout: %d\n", time);
+}
+
+void MessageController::sendModbusTcpCurrent(int current)
+{
+  json j;
+  j["type"] = "modbusTcpCurrent";
+  j["data"]["value"] = current;
+  send(j.dump());
+  logNotice("sent modbusTcpCurrent: %d\n", current);
+}

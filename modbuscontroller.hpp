@@ -81,6 +81,7 @@ public:
   void set_session_energy(int energy);
   void set_chargepoint_id(std::string id);
   void listen();
+  modbus_mapping_t *map;
 
 private:
   void set_r_register(uint16_t data, int addr);
@@ -91,7 +92,7 @@ private:
   void set_rw_register(std::string data, int addr);
 
   modbus_t *context;
-  modbus_mapping_t *map;
+  
   std::string host;
   int port;
 };

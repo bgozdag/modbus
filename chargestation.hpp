@@ -298,6 +298,7 @@ public:
   void getPowerOptimizerLimits(json msg);
   void updateChargeSession();
   void start();
+  void failsafeChecker();
   ModbusController *modbusController;
   MessageController *messageController;
   ChargePoint chargePoint;

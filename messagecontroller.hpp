@@ -17,6 +17,9 @@ public:
   ~MessageController();
   std::string receive();
   void send(std::string);
+  void sendFailsafeCurrent(int current);
+  void sendFailsafeTimeout(int current);
+  void sendModbusTcpCurrent(int current);
   json parse(std::string);
 
 private:

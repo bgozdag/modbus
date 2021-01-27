@@ -3673,6 +3673,17 @@ class ChargeStation(Requester):
 
                             if self.configuration_manager.is_cellular_enabled():
                                 self.configuration_manager.reset_quectel_modem()
+
+                        elif json_type == "failsafeCurrent":
+                            self.charge_points[charge_point_id].failsafe_current = json_object['data']['value']
+
+                        elif json_type == "failsafeTimeout":
+                            self.charge_points[charge_point_id].failsafe_timeout = json_object['data']['value']
+
+                        elif json_type == "modbusTcpCurrent":
+                            value = json_object['data']['value']
+                            modbustcp_current_command = SetModbusTcpCurrentCommand(self, value)
+                            modbustcp_current_command.execute()
                         
                         else:
                             logger.info("Unknown request")
@@ -4125,6 +4136,24 @@ class SetPowerOptimizerCommand(Command):
         time.sleep(0.2)
         # query lockable cable status for db update
         cmd = AcpwMessageHandler.create_acpw_protocol_message(AcpwCommandId.APP_CPHOME_CURRENT.value, bytearray([]))
+        self.owner.mediator.send(cmd, self.owner, MessageTypes.ACPW)
+
+
+class SetModbusTcpCurrentCommand(Command):
+
+    def __init__(self, owner, payload=None):
+        self.owner = owner
+        if payload is not None:
+            self.payload = bytearray([payload])
+        else:
+            self.payload = bytearray([])
+
+    def execute(self):
+        cmd = AcpwMessageHandler.create_acpw_protocol_message(AcpwCommandId.SET_MODBUSTCP_CURRENT.value, self.payload)
+        self.owner.mediator.send(cmd, self.owner, MessageTypes.ACPW)
+        time.sleep(0.2)
+        # query lockable cable status for db update
+        cmd = AcpwMessageHandler.create_acpw_protocol_message(AcpwCommandId.SET_MODBUSTCP_CURRENT.value, bytearray([]))
         self.owner.mediator.send(cmd, self.owner, MessageTypes.ACPW)
 
 

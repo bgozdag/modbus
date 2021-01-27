@@ -143,12 +143,12 @@ void ModbusController::set_failsafe_timeout(int time)
 
 void ModbusController::set_charging_current(int time)
 {
-  set_rw_register(uint16_t(time), FAILSAFE_TIMEOUT_REG);
+  set_rw_register(uint16_t(time), CHARGING_CURRENT_REG);
 }
 
 void ModbusController::set_alive_register()
 {
-  set_rw_register(uint16_t(1), ALIVE_REGISTER);
+  set_rw_register(uint16_t(0), ALIVE_REGISTER);
 }
 
 void ModbusController::set_r_register(uint32_t data, int addr)
