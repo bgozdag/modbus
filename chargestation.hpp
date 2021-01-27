@@ -205,7 +205,6 @@ public:
   ~ChargeStation();
   static int agent_callback(void *data, int argc, char **argv, char **azColName)
   {
-    logEmerg("callback\n");
     ChargeStation *chargeStation = (ChargeStation *)data;
     if (argv != nullptr) {
       if(argv[0] != nullptr)

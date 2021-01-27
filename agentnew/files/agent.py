@@ -879,7 +879,7 @@ class ChargePoint:
                  error_code=None, vendor_error_code=0, availability=None, min_current=0, max_current=0,
                  available_current=0, lockable_cable=0, reservation_status=Status.DISABLED,
                  expiry_date="", id_tag="", reservation_id="", external_charge=1, current_offered_value=0, authorization_status=AuthorizationStatus.FINISH,
-                 authorization_uid=None, current_offered_reason=CurrentOfferedToEvReason.NORMAL, proximity_pilot_current =0):
+                 authorization_uid=None, current_offered_reason=CurrentOfferedToEvReason.NORMAL, proximity_pilot_current=0):
 
         self.charge_station = charge_station
         self.id = cp_id
@@ -3315,7 +3315,7 @@ class ChargeStation(Requester):
                             self.charge_points[charge_point_id].minimum_current = json_object['data']['value']
 
                         elif json_type == "proximityPilotCurrent":
-                            self.charge_points[charge_point_id].proximimity_pilot_current = json_object['data']['value']
+                            self.charge_points[charge_point_id].proximity_pilot_current = json_object['data']['value']
 
                         elif json_type == "availableCurrent":
                             self.charge_points[charge_point_id].available_current = json_object['data']['value']
