@@ -110,6 +110,11 @@ void ModbusController::set_chargepoint_states(ChargePointStatus state,
   set_r_register(uint16_t(vendorErrorCode), EVSE_FAULT_CODE_REG);
 }
 
+void ModbusController::set_cable_max_current(int current)
+{
+  set_r_register(uint16_t(current), CABLE_MAX_CURRENT_REG);
+}
+
 void ModbusController::set_session_max_current(int current)
 {
   set_r_register(uint16_t(current), SESSION_MAX_CURRENT_REG);

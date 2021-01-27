@@ -23,10 +23,17 @@ std::string MessageController::receive()
   std::string string_msg =
       std::string(static_cast<char *>(zmq_msg_data(&msg)), zmq_msg_size(&msg));
   zmq_msg_close(&msg);
+  // logDebug("received: %s\n", string_msg.c_str());
   return string_msg;
 }
 
-nlohmann::json MessageController::parse(std::string msg)
+json MessageController::parse(std::string msg)
 {
-  return nlohmann::json::parse(msg);
+  return json::parse(msg);
+}
+
+void MessageController::send(std::string msg)
+{
+  // logDebug("sending: %s\n", msg.c_str());
+  zmq_send(dealer, msg.c_str(), msg.size(), 0);
 }

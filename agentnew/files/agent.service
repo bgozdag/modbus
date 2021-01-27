@@ -1,0 +1,14 @@
+[Unit]
+Description=HMI agent
+After=ui.service
+
+[Service]
+OOMScoreAdjust=-900
+Type=simple
+Restart=always
+RestartSec=3
+User=root
+ExecStart=/usr/bin/python3.5 -u /usr/lib/vestel/agent.py
+
+[Install]
+WantedBy=multi-user.target

@@ -25,15 +25,27 @@ public:
   {
     ChargeSession *chargeSession = (ChargeSession *)data;
     if (argv != nullptr) {
-        if(argv[0] != nullptr)
-        {
-            chargeSession->startTime = atoi(argv[0]);
-            chargeSession->stopTime = atoi(argv[1]);
-            auto it = chargeSessionStatusTable.find(argv[2]);
-            chargeSession->status = it->second;
-            chargeSession->initialEnergy = atoi(argv[3]);
-            chargeSession->lastEnergy = atoi(argv[4]);
-        }
+      if(argv[0] != nullptr)
+      {
+        chargeSession->startTime = atoi(argv[0]);
+      }
+      if(argv[1] != nullptr)
+      {
+        chargeSession->stopTime = atoi(argv[1]);
+      }
+      if(argv[2] != nullptr)
+      {
+        auto it = chargeSessionStatusTable.find(argv[2]);
+        chargeSession->status = it->second;
+      }
+      if(argv[3] != nullptr)
+      {
+        chargeSession->initialEnergy = atoi(argv[3]);
+      }
+      if(argv[4] != nullptr)
+      {
+        chargeSession->lastEnergy = atoi(argv[4]);
+      }
     }
     return 0;
   };
@@ -57,29 +69,96 @@ public:
       if(argv[0] != nullptr)
       {
         chargePoint->pilotState = atoi(argv[0]);
+      }
+      if(argv[1] != nullptr)
+      {
         chargePoint->proximityPilotState = atoi(argv[1]);
+      }
+      if(argv[2] != nullptr)
+      {
         auto it = chargePointStatusTable.find(argv[2]);
         chargePoint->status = it->second;
+      }
+      if(argv[3] != nullptr)
+      {
         chargePoint->vendorErrorCode = atoi(argv[3]);
+      }
+      if(argv[4] != nullptr)
+      {
         chargePoint->voltageP1 = atoi(argv[4]);
+      }
+      if(argv[5] != nullptr)
+      {
         chargePoint->voltageP2 = atoi(argv[5]);
+      }
+      if(argv[6] != nullptr)
+      {
         chargePoint->voltageP3 = atoi(argv[6]);
+      }
+      if(argv[7] != nullptr)
+      {
         chargePoint->currentP1 = atoi(argv[7]);
+      }
+      if(argv[8] != nullptr)
+      {
         chargePoint->currentP2 = atoi(argv[8]);
+      }
+      if(argv[9] != nullptr)
+      {
         chargePoint->currentP3 = atoi(argv[9]);
+      }
+      if(argv[10] != nullptr)
+      {
         chargePoint->activePowerP1 = atoi(argv[10]);
+      }
+      if(argv[11] != nullptr)
+      {
         chargePoint->activePowerP2 = atoi(argv[11]);
+      }
+      if(argv[12] != nullptr)
+      {
         chargePoint->activePowerP3 = atoi(argv[12]);
+      }
+      if(argv[13] != nullptr)
+      {
         chargePoint->activeEnergyP1 = atoi(argv[13]);
+      }
+      if(argv[14] != nullptr)
+      {
         chargePoint->activeEnergyP2 = atoi(argv[14]);
+      }
+      if(argv[15] != nullptr)
+      {
         chargePoint->activeEnergyP3 = atoi(argv[15]);
+      }
+      if(argv[16] != nullptr)
+      {
         auto it2 = chargePointAvailabilityTable.find(argv[16]);
         chargePoint->availability = it2->second;
+      }
+      if(argv[17] != nullptr)
+      {
         chargePoint->minCurrent = atoi(argv[17]);
+      }
+      if(argv[18] != nullptr)
+      {
         chargePoint->maxCurrent = atoi(argv[18]);
+      }
+      if(argv[19] != nullptr)
+      {
         chargePoint->availableCurrent = atoi(argv[19]);
+      }
+      if(argv[20] != nullptr)
+      {
         chargePoint->currentOfferedToEv = atoi(argv[20]);
+      }
+      if(argv[21] != nullptr)
+      {
         chargePoint->currentOfferedToEvReason = static_cast<CurrentOfferedToEvReason>(atoi(argv[21]));
+      }
+      if(argv[22] != nullptr)
+      {
+        chargePoint->cableMaxCurrent = atoi(argv[22]);
       }
     }
     return 0;
@@ -91,6 +170,7 @@ public:
   void getCurrentOffered(json msg);
   void getMinCurrent(json msg);
   void getMaxCurrent(json msg);
+  void getCableMaxCurrent(json msg);
   ChargeSession chargeSession;
   ChargePointStatus status;
   AuthorizationStatus authorizationStatus;
@@ -115,6 +195,7 @@ public:
   int currentOfferedToEv;
   CurrentOfferedToEvReason currentOfferedToEvReason;
   int availableCurrent;
+  int cableMaxCurrent;
 };
 
 class ChargeStation
@@ -124,15 +205,31 @@ public:
   ~ChargeStation();
   static int agent_callback(void *data, int argc, char **argv, char **azColName)
   {
+    logEmerg("callback\n");
     ChargeStation *chargeStation = (ChargeStation *)data;
     if (argv != nullptr) {
       if(argv[0] != nullptr)
       {
         chargeStation->phaseType = atoi(argv[0]);
+      }
+      if(argv[1] != nullptr)
+      {
         chargeStation->powerOptimizer = atoi(argv[1]);
+      }
+      if(argv[2] != nullptr)
+      {
         chargeStation->powerOptimizerMin = atoi(argv[2]);
+      }
+      if(argv[3] != nullptr)
+      {
         chargeStation->powerOptimizerMax = atoi(argv[3]);
+      }
+      if(argv[4] != nullptr)
+      {
         chargeStation->serial = argv[4];
+      }
+      if(argv[5] != nullptr)
+      {
         chargeStation->acpwVersion = argv[5];
       }
     }
@@ -145,6 +242,9 @@ public:
       if(argv[0] != nullptr)
       {
         chargeStation->model = argv[0];
+      }
+      if(argv[1] != nullptr)
+      {
         chargeStation->brand = argv[1];
       }
     }

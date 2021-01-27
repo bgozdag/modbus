@@ -52,7 +52,7 @@ void ChargeSession::getChargeSession(json msg)
 
 ChargeStation::ChargeStation()
 {
-  status = ChargeStationStatus::Normal;
+  status = ChargeStationStatus::Initializing;
   phaseType = 0;
   powerOptimizer = 0;
   powerOptimizerMin = 0;
@@ -64,11 +64,14 @@ ChargeStation::ChargeStation()
   acpwVersion = "";
   modbusController = new ModbusController("127.0.0.1", 502);
   messageController = new MessageController("MODBUSTCP");
-
   readVfactoryDb();
   readAgentDb();
   readSystemDb();
   readWebconfigDb();
+
+  json generalStatus;
+  generalStatus["type"] = "GeneralStatus";
+  this->messageController->send(generalStatus.dump());
 
   // logDebug("serial: %s\n",serial.c_str());
   // logDebug("chargePointId: %s\n", chargePointId.c_str());
@@ -125,6 +128,7 @@ ChargeStation::ChargeStation()
   this->modbusController->set_firmware_version(hmiVersion, acpwVersion);
   this->modbusController->set_chargepoint_id(chargePointId);
   this->modbusController->set_cable_state(chargePoint.pilotState, chargePoint.proximityPilotState);
+  this->modbusController->set_cable_max_current(chargePoint.cableMaxCurrent);
   this->modbusController->set_chargepoint_states(
         chargePoint.status, chargePoint.vendorErrorCode, chargePoint.pilotState);
   this->modbusController->set_meter_values(chargePoint.activeEnergyP1,
@@ -246,7 +250,6 @@ void ChargeStation::updateStation(json msg)
   if (msg["type"].is_string())
   {
     msg.at("type").get_to(type);
-    // logDebug("received: %s\n", msg.dump().c_str());
     if (type.compare("StatusNotification") == 0)
     {
       chargePoint.getStatusNotification(msg);
@@ -319,6 +322,11 @@ void ChargeStation::updateStation(json msg)
     {
       chargePoint.getMaxCurrent(msg);
       this->modbusController->set_evse_max_current(chargePoint.maxCurrent);
+    }
+    else if (type.compare("proximityPilotCurrent") == 0)
+    {
+      chargePoint.getCableMaxCurrent(msg);
+      this->modbusController->set_cable_max_current(chargePoint.cableMaxCurrent);
     }
   }
   else
@@ -414,6 +422,7 @@ ChargePoint::ChargePoint()
   availableCurrent = 0;
   currentOfferedToEv = 0;
   currentOfferedToEvReason = CurrentOfferedToEvReason::NormalReason;
+  cableMaxCurrent = 0;
 
   sqlite3 *db;
   char *zErrMsg = 0;
@@ -422,8 +431,8 @@ ChargePoint::ChargePoint()
       "SELECT controlPilotState,proximityPilotState,status,vendorErrorCode,voltageP1,"
       "voltageP2,voltageP3,currentP1,currentP2,currentP3,activePowerP1,"
       "activePowerP2,activePowerP3,activeEnergyP1,activeEnergyP2,activeEnergyP3,"
-      "availability,minCurrent,maxCurrent,availableCurrent, currentOfferedValue, currentOfferedReason "
-      "FROM chargePoints WHERE chargePointId=1";
+      "availability,minCurrent,maxCurrent,availableCurrent, currentOfferedValue, currentOfferedReason, "
+      "proximityPilotCurrent FROM chargePoints WHERE chargePointId=1";
   rc = sqlite3_open(AGENT_DB_PATH, &db);
 
   if (rc != SQLITE_OK)
@@ -452,6 +461,11 @@ void ChargePoint::getAuthorizationStatus(json msg)
 void ChargePoint::getMinCurrent(json msg)
 {
   msg.at("data").at("value").get_to(minCurrent);
+}
+
+void ChargePoint::getCableMaxCurrent(json msg)
+{
+  msg.at("data").at("value").get_to(cableMaxCurrent);
 }
 
 void ChargePoint::getMaxCurrent(json msg)

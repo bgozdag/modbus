@@ -8,6 +8,8 @@
 
 #define zmqDealerIPC "ipc:///var/lib/routing.ipc"
 
+using json = nlohmann::json;
+
 class MessageController
 {
 public:
@@ -15,7 +17,7 @@ public:
   ~MessageController();
   std::string receive();
   void send(std::string);
-  nlohmann::json parse(std::string);
+  json parse(std::string);
 
 private:
   void *context;

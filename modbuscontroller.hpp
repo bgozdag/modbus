@@ -41,6 +41,7 @@
 #define SESSION_MAX_CURRENT_REG 1100
 #define EVSE_MIN_CURRENT_REG 1102
 #define EVSE_MAX_CURRENT_REG 1104
+#define CABLE_MAX_CURRENT_REG 1106
 #define SESSION_ENERGY_REG 1502
 #define SESSION_START_TIME_REG 1504
 #define SESSION_DURATION_REG 1508
@@ -58,6 +59,7 @@ public:
   void set_meter_values(int energy, int currentP1, int currentP2, int currentP3, int powerP1, int powerP2, int powerP3, int voltageP1, int voltageP2, int voltageP3);
   void set_evse_min_current(int current);
   void set_evse_max_current(int current);
+  void set_cable_max_current(int current);
   void set_session_max_current(int current);
   void set_serial(std::string serial);
   void set_brand(std::string brand);
