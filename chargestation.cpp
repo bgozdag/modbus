@@ -112,7 +112,11 @@ ChargeStation::ChargeStation()
   // logDebug("lastEnergy: %d\n",chargePoint.chargeSession.lastEnergy);
   // logDebug("current: %d\n", chargePoint.currentOfferedToEv);
   // logDebug("reason: %d\n", chargePoint.currentOfferedToEvReason);
+  // logDebug("failsafeCurrent: %d\n",chargePoint.failsafeCurrent);
+  // logDebug("failsafeTimeout: %d\n", chargePoint.failsafeTimeout);
+  // logDebug("modbusTcpCurrent: %d\n", chargePoint.modbusTcpCurrent);
   // logNotice("initialized charge station\n");
+
   this->modbusController->set_serial(serial);
   this->modbusController->set_equipment_state(status, chargePoint.status);
   this->modbusController->set_session_max_current(chargePoint.currentOfferedToEv);
@@ -343,7 +347,7 @@ void ChargeStation::updateStation(json msg)
       chargePoint.getFailsafeTimeout(msg);
       this->modbusController->set_failsafe_timeout(chargePoint.failsafeTimeout);
     }
-    else if (type.compare("proximityPilotCurrent") == 0)
+    else if (type.compare("modbusTcpCurrent") == 0)
     {
       chargePoint.getModbusTcpCurrent(msg);
       this->modbusController->set_charging_current(chargePoint.modbusTcpCurrent);

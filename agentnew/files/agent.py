@@ -261,6 +261,7 @@ class MessageMediator(Mediator):
                 self.charge_station.get_message(message, message_type)
             else:
                 self.charge_station.get_message(message, message_type)
+                self.zmq_message_handler.send_to_socket(message, Dealer.MODBUSTCP)
 
         elif requester == self.configuration_manager:
             self.charge_station.get_configuration(message, message_type)
