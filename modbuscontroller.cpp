@@ -1,10 +1,11 @@
 #include "modbuscontroller.hpp"
 
-ModbusController::ModbusController(std::string h, int p)
+ModbusController::ModbusController(MessageController *mc)
 {
-  host = h;
-  port = p;
+  host = "127.0.0.1";
+  port = 502;
   context = modbus_new_tcp(host.c_str(), port);
+  this->messageController = mc;
   map = modbus_mapping_new(0, 0, 6001, 6001);
   if (map == NULL)
   {
@@ -42,8 +43,10 @@ void ModbusController::listen()
       rc = modbus_receive(context, query);
       if (rc > 0)
       {
+        logNotice("received new request:\n");
         // rc is the query size
         modbus_reply(context, query, rc, map);
+        parse_tcp_message(query);
       }
       else if (rc == -1)
       {
@@ -55,6 +58,38 @@ void ModbusController::listen()
     if (s != -1)
     {
       close(s);
+    }
+  }
+}
+
+void ModbusController::parse_tcp_message(uint8_t data[])
+{
+  int i=0;
+  msg.transactionIdentifier = data[i++] * 256 + data[i++];
+  msg.protocolIdentifier = data[i++] * 256 + data[i++];
+  msg.messageLength = data[i++] * 256 + data[i++];
+  msg.unitIdentifier = data[i++];
+  msg.functionCode = data[i++];
+  logNotice("function: %d\n", msg.functionCode);
+  msg.address = data[i++] * 256 + data[i++];
+  logNotice("address: %d\n", msg.address);
+  msg.nb = data[i++] * 256 + data[i++];
+  if (msg.messageLength > 6)
+  {
+    msg.dataSize = data[i++];
+    msg.data = data[i++] * 256 + data[i++];
+    logNotice("data: %d\n", msg.data);
+    if (msg.address == FAILSAFE_CURRENT_REG)
+    {
+      messageController->sendFailsafeCurrent(msg.data);
+    }
+    else if (msg.address == FAILSAFE_TIMEOUT_REG)
+    {
+      messageController->sendFailsafeTimeout(msg.data);
+    }
+    else if (msg.address == CHARGING_CURRENT_REG)
+    {
+      messageController->sendModbusTcpCurrent(msg.data);
     }
   }
 }
@@ -123,7 +158,7 @@ void ModbusController::set_session_max_current(int current)
 void ModbusController::set_evse_max_current(int current)
 {
   set_r_register(uint16_t(current), EVSE_MAX_CURRENT_REG);
-  set_r_register(uint32_t(230*current), CHARGEPOINT_POWER_REG);
+  set_r_register(uint32_t(230 * current), CHARGEPOINT_POWER_REG);
 }
 
 void ModbusController::set_evse_min_current(int current)
@@ -157,12 +192,13 @@ void ModbusController::set_r_register(uint32_t data, int addr)
   memcpy(arr, &data, sizeof(data));
   arr[0] = data >> 16;
   arr[1] = data;
-  for (int i = 0; i<2; i++)
+  for (int i = 0; i < 2; i++)
   {
     if (map->tab_input_registers[addr] != arr[i])
     {
       map->tab_input_registers[addr] = arr[i];
-      if (addr != 295){
+      if (addr != 295)
+      {
         logNotice("set r reg[%d] : %d\n", addr, map->tab_input_registers[addr]);
       }
     }
@@ -176,7 +212,7 @@ void ModbusController::set_rw_register(uint32_t data, int addr)
   memcpy(arr, &data, sizeof(data));
   arr[0] = data >> 16;
   arr[1] = data;
-  for (int i = 0; i<2; i++)
+  for (int i = 0; i < 2; i++)
   {
     if (map->tab_registers[addr] != arr[i])
     {
@@ -189,7 +225,7 @@ void ModbusController::set_rw_register(uint32_t data, int addr)
 
 void ModbusController::set_r_register(std::string data, int addr)
 {
-  for (int i = 0; i<data.length(); i++)
+  for (int i = 0; i < data.length(); i++)
   {
     uint16_t temp = (uint16_t)data.at(i);
     if (map->tab_input_registers[addr] != temp)
@@ -204,7 +240,7 @@ void ModbusController::set_r_register(std::string data, int addr)
 void ModbusController::set_rw_register(std::string data, int addr)
 {
 
-  for (int i = 0; i<data.length(); i++)
+  for (int i = 0; i < data.length(); i++)
   {
     uint16_t temp = (uint16_t)data.at(i);
     if (map->tab_registers[addr] != temp)
@@ -219,19 +255,19 @@ void ModbusController::set_rw_register(std::string data, int addr)
 void ModbusController::set_r_register(uint16_t data, int addr)
 {
   if (map->tab_input_registers[addr] != data)
-    {
-      map->tab_input_registers[addr] = data;
-      logNotice("set r reg[%d] : %d\n", addr, map->tab_input_registers[addr]);
-    }
+  {
+    map->tab_input_registers[addr] = data;
+    logNotice("set r reg[%d] : %d\n", addr, map->tab_input_registers[addr]);
+  }
 }
 
 void ModbusController::set_rw_register(uint16_t data, int addr)
 {
   if (map->tab_registers[addr] != data)
-    {
-      map->tab_registers[addr] = data;
-      logNotice("set rw reg[%d] : %d\n", addr, map->tab_registers[addr]);
-    }
+  {
+    map->tab_registers[addr] = data;
+    logNotice("set rw reg[%d] : %d\n", addr, map->tab_registers[addr]);
+  }
 }
 
 void ModbusController::set_equipment_state(ChargeStationStatus stationStatus, ChargePointStatus pointStatus)
@@ -288,11 +324,11 @@ void ModbusController::set_charge_session(int startTime, int stopTime, int initi
   {
     time_t startEpoch = startTime;
     tm *startDateTime = localtime(&startEpoch);
-    snprintf(data, 3, "%02d",startDateTime->tm_hour);
+    snprintf(data, 3, "%02d", startDateTime->tm_hour);
     ss << data;
-    snprintf(data, 3, "%02d",startDateTime->tm_min);
+    snprintf(data, 3, "%02d", startDateTime->tm_min);
     ss << data;
-    snprintf(data, 3, "%02d",startDateTime->tm_sec);
+    snprintf(data, 3, "%02d", startDateTime->tm_sec);
     ss << data;
     set_r_register(uint32_t(atoi(ss.str().c_str())), SESSION_START_TIME_REG);
     ss.clear();
@@ -306,11 +342,11 @@ void ModbusController::set_charge_session(int startTime, int stopTime, int initi
   {
     time_t stopEpoch = stopTime;
     tm *stopDateTime = localtime(&stopEpoch);
-    snprintf(data, 3, "%02d",stopDateTime->tm_hour);
+    snprintf(data, 3, "%02d", stopDateTime->tm_hour);
     ss << data;
-    snprintf(data, 3, "%02d",stopDateTime->tm_min);
+    snprintf(data, 3, "%02d", stopDateTime->tm_min);
     ss << data;
-    snprintf(data, 3, "%02d",stopDateTime->tm_sec);
+    snprintf(data, 3, "%02d", stopDateTime->tm_sec);
     ss << data;
     set_r_register(uint32_t(atoi(ss.str().c_str())), SESSION_END_TIME);
   }
@@ -346,24 +382,24 @@ void ModbusController::update_datetime()
   tm *dateTime;
   std::stringstream ss;
   char data[3];
-  while(1)
+  while (1)
   {
     currentTime = time(0);
     dateTime = localtime(&currentTime);
-    snprintf(data, 3, "%02d",dateTime->tm_year-100);
+    snprintf(data, 3, "%02d", dateTime->tm_year - 100);
     ss << data;
-    snprintf(data, 3, "%02d",dateTime->tm_mon+1);
+    snprintf(data, 3, "%02d", dateTime->tm_mon + 1);
     ss << data;
-    snprintf(data, 3, "%02d",dateTime->tm_mday);
+    snprintf(data, 3, "%02d", dateTime->tm_mday);
     ss << data;
     set_date(atoi(ss.str().c_str()));
     ss.clear();
     ss.str("");
-    snprintf(data, 3, "%02d",dateTime->tm_hour);
+    snprintf(data, 3, "%02d", dateTime->tm_hour);
     ss << data;
-    snprintf(data, 3, "%02d",dateTime->tm_min);
+    snprintf(data, 3, "%02d", dateTime->tm_min);
     ss << data;
-    snprintf(data, 3, "%02d",dateTime->tm_sec);
+    snprintf(data, 3, "%02d", dateTime->tm_sec);
     ss << data;
     set_time(atoi(ss.str().c_str()));
     ss.clear();
@@ -394,7 +430,7 @@ void ModbusController::set_date(int currentDate)
 
 void ModbusController::set_cable_state(int pilotState, int proximityState)
 {
-  if(proximityState == 1)
+  if (proximityState == 1)
   {
     set_r_register(uint16_t(0), CABLE_STATE_REG);
   }

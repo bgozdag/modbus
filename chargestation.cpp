@@ -62,8 +62,8 @@ ChargeStation::ChargeStation()
   model = "";
   hmiVersion = "";
   acpwVersion = "";
-  modbusController = new ModbusController("127.0.0.1", 502);
-  messageController = new MessageController("MODBUSTCP");
+  messageController = new MessageController();
+  modbusController = new ModbusController(messageController);
   readVfactoryDb();
   readAgentDb();
   readSystemDb();
@@ -333,6 +333,21 @@ void ChargeStation::updateStation(json msg)
       chargePoint.getCableMaxCurrent(msg);
       this->modbusController->set_cable_max_current(chargePoint.cableMaxCurrent);
     }
+    else if (type.compare("failsafeCurrent") == 0)
+    {
+      chargePoint.getFailsafeCurrent(msg);
+      this->modbusController->set_failsafe_current(chargePoint.failsafeCurrent);
+    }
+    else if (type.compare("failsafeTimeout") == 0)
+    {
+      chargePoint.getFailsafeTimeout(msg);
+      this->modbusController->set_failsafe_timeout(chargePoint.failsafeTimeout);
+    }
+    else if (type.compare("proximityPilotCurrent") == 0)
+    {
+      chargePoint.getModbusTcpCurrent(msg);
+      this->modbusController->set_charging_current(chargePoint.modbusTcpCurrent);
+    }
   }
   else
   {
@@ -404,19 +419,18 @@ void ChargeStation::start()
 
 void ChargeStation::failsafeChecker()
 {
-  int failsafePeriod;
-
-  if (chargePoint.failsafeTimeout == 0)
-  {
-    failsafePeriod = 1;
-  }
-  else
-  {
-    failsafePeriod = round((float)chargePoint.failsafeTimeout / 2.0);
-  }
-  logNotice("failsafe period: %d\n", failsafePeriod);
+  int failsafePeriod = 1;
   while (1)
   {
+    if (chargePoint.failsafeTimeout != 0)
+    {
+      if (failsafePeriod != round((float)chargePoint.failsafeTimeout / 2.0))
+      {
+        failsafePeriod = round((float)chargePoint.failsafeTimeout / 2.0);
+        logNotice("failsafe check period: %d\n", failsafePeriod);
+      }
+    }
+
     if (this->modbusController->map->tab_registers[6000] == 0 and chargePoint.failsafeCurrent != chargePoint.modbusTcpCurrent)
     {
       this->messageController->sendModbusTcpCurrent(chargePoint.failsafeCurrent);
@@ -498,6 +512,21 @@ void ChargePoint::getMinCurrent(json msg)
 void ChargePoint::getCableMaxCurrent(json msg)
 {
   msg.at("data").at("value").get_to(cableMaxCurrent);
+}
+
+void ChargePoint::getFailsafeCurrent(json msg)
+{
+  msg.at("data").at("value").get_to(failsafeCurrent);
+}
+
+void ChargePoint::getFailsafeTimeout(json msg)
+{
+  msg.at("data").at("value").get_to(failsafeTimeout);
+}
+
+void ChargePoint::getModbusTcpCurrent(json msg)
+{
+  msg.at("data").at("value").get_to(modbusTcpCurrent);
 }
 
 void ChargePoint::getMaxCurrent(json msg)

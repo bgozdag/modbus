@@ -4,6 +4,8 @@
 #include "enum.hpp"
 #include "modbus.h"
 #include "log.h"
+#include "tcpmessage.hpp"
+#include "messagecontroller.hpp"
 #include <unistd.h>
 #include <math.h>
 #include <sstream>
@@ -54,9 +56,10 @@
 class ModbusController
 {
 public:
-  ModbusController(std::string host, int port);
+  ModbusController(MessageController *messageController);
   ~ModbusController();
   void update_datetime();
+  TcpMessage msg;
   void set_time(int currentTime);
   void set_date(int currentDate);
   void set_chargepoint_states(ChargePointStatus state, int vendorErrorCode, int pilotState);
@@ -82,6 +85,7 @@ public:
   void set_chargepoint_id(std::string id);
   void listen();
   modbus_mapping_t *map;
+  MessageController *messageController;
 
 private:
   void set_r_register(uint16_t data, int addr);
@@ -90,7 +94,7 @@ private:
   void set_rw_register(uint32_t data, int addr);
   void set_r_register(std::string data, int addr);
   void set_rw_register(std::string data, int addr);
-
+  void parse_tcp_message(uint8_t data[]);
   modbus_t *context;
   
   std::string host;

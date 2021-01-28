@@ -13,7 +13,7 @@ using json = nlohmann::json;
 class MessageController
 {
 public:
-  MessageController(std::string id);
+  MessageController();
   ~MessageController();
   std::string receive();
   void send(std::string);

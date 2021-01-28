@@ -1,10 +1,10 @@
 #include "messagecontroller.hpp"
 
-MessageController::MessageController(std::string id)
+MessageController::MessageController()
 {
   context = zmq_ctx_new();
   dealer = zmq_socket(context, ZMQ_DEALER);
-  zmq_setsockopt(dealer, ZMQ_IDENTITY, id.c_str(), id.length());
+  zmq_setsockopt(dealer, ZMQ_IDENTITY, "MODBUSTCP", 9);
   zmq_connect(dealer, zmqDealerIPC);
   logNotice("zmq dealer is connected\n");
 }

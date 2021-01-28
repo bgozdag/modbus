@@ -183,6 +183,9 @@ public:
   void getMinCurrent(json msg);
   void getMaxCurrent(json msg);
   void getCableMaxCurrent(json msg);
+  void getFailsafeCurrent(json msg);
+  void getFailsafeTimeout(json msg);
+  void getModbusTcpCurrent(json msg);
   ChargeSession chargeSession;
   ChargePointStatus status;
   AuthorizationStatus authorizationStatus;
