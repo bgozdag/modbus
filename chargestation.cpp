@@ -14,7 +14,7 @@ ChargeSession::ChargeSession()
   std::string query =
       "SELECT startTime,stopTime,status,initialEnergy,lastEnergy FROM "
       "activeChargeSession";
-  rc = sqlite3_open(AGENT_DB_PATH, &db);
+  rc = sqlite3_open_v2(AGENT_DB_PATH, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX, nullptr);
 
   if (rc != SQLITE_OK)
   {
@@ -23,9 +23,11 @@ ChargeSession::ChargeSession()
   else
   {
     int check = sqlite3_exec(db, query.c_str(), callback, this, &zErrMsg);
-    if (check != SQLITE_OK)
+    while (check != SQLITE_OK)
     {
       logErr("sql exec error: %s\n", sqlite3_errmsg(db));
+      sleep(1);
+      check = sqlite3_exec(db, query.c_str(), callback, this, &zErrMsg);
     }
   }
   sqlite3_close(db);
@@ -117,31 +119,30 @@ ChargeStation::ChargeStation()
   // logDebug("modbusTcpCurrent: %d\n", chargePoint.modbusTcpCurrent);
   // logNotice("initialized charge station\n");
 
-  this->modbusController->set_serial(serial);
-  this->modbusController->set_equipment_state(status, chargePoint.status);
-  this->modbusController->set_session_max_current(chargePoint.currentOfferedToEv);
-  this->modbusController->set_evse_max_current(chargePoint.maxCurrent);
-  this->modbusController->set_evse_min_current(chargePoint.minCurrent);
-  this->modbusController->set_cable_state(chargePoint.pilotState, chargePoint.proximityPilotState);
-  this->modbusController->set_charge_session(chargePoint.chargeSession.startTime,
+  this->modbusController->setSerial(serial);
+  this->modbusController->setEquipmentState(status, chargePoint.status);
+  this->modbusController->setSessionMaxCurrent(chargePoint.currentOfferedToEv);
+  this->modbusController->setEvseMaxCurrent(chargePoint.maxCurrent);
+  this->modbusController->setEvseMinCurrent(chargePoint.minCurrent);
+  this->modbusController->setCableState(chargePoint.pilotState, chargePoint.proximityPilotState);
+  this->modbusController->setChargeSession(chargePoint.chargeSession.startTime,
         chargePoint.chargeSession.stopTime, chargePoint.chargeSession.initialEnergy,
         chargePoint.chargeSession.lastEnergy, chargePoint.chargeSession.status);
-  this->modbusController->set_brand(brand);
-  this->modbusController->set_model(model);
-  this->modbusController->set_phase(phaseType);
-  this->modbusController->set_firmware_version(hmiVersion, acpwVersion);
-  this->modbusController->set_chargepoint_id(chargePointId);
-  this->modbusController->set_cable_state(chargePoint.pilotState, chargePoint.proximityPilotState);
-  this->modbusController->set_cable_max_current(chargePoint.cableMaxCurrent);
-  this->modbusController->set_chargepoint_states(
+  this->modbusController->setBrand(brand);
+  this->modbusController->setModel(model);
+  this->modbusController->setPhase(phaseType);
+  this->modbusController->setFirmwareVersion(hmiVersion, acpwVersion);
+  this->modbusController->setChargepointId(chargePointId);
+  this->modbusController->setCableMaxCurrent(chargePoint.cableMaxCurrent);
+  this->modbusController->setChargepointStates(
         chargePoint.status, chargePoint.vendorErrorCode, chargePoint.pilotState);
-  this->modbusController->set_meter_values(chargePoint.activeEnergyP1,
+  this->modbusController->setMeterValues(chargePoint.activeEnergyP1,
         chargePoint.currentP1, chargePoint.currentP2, chargePoint.currentP3,
         chargePoint.activePowerP1, chargePoint.activePowerP2, chargePoint.activePowerP3,
         chargePoint.voltageP1, chargePoint.voltageP2, chargePoint.voltageP3);
-  this->modbusController->set_failsafe_current(chargePoint.failsafeCurrent);
-  this->modbusController->set_failsafe_timeout(chargePoint.failsafeTimeout);
-  this->modbusController->set_charging_current(chargePoint.modbusTcpCurrent);
+  this->modbusController->setFailsafeCurrent(chargePoint.failsafeCurrent);
+  this->modbusController->setFailsafeTimeout(chargePoint.failsafeTimeout);
+  this->modbusController->setChargingCurrent(chargePoint.modbusTcpCurrent);
 
   std::thread sessionThread(&ChargeStation::updateChargeSession, this);
   sessionThread.detach();
@@ -158,7 +159,7 @@ void ChargeStation::readAgentDb()
       "SELECT chargeStation.phaseType,chargeStation.powerOptimizer,chargeStation.powerOptimizerMin,"
       "chargeStation.powerOptimizerMax,deviceDetails.acpwSerialNumber, deviceDetails.acpwVersion "
       "FROM chargeStation INNER JOIN deviceDetails USING(ID)";
-  rc = sqlite3_open(AGENT_DB_PATH, &db);
+  rc = sqlite3_open_v2(AGENT_DB_PATH, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX, nullptr);
 
   if (rc != SQLITE_OK)
   {
@@ -167,9 +168,11 @@ void ChargeStation::readAgentDb()
   else
   {
     int check = sqlite3_exec(db, query.c_str(), agent_callback, this, &zErrMsg);
-    if (check != SQLITE_OK)
+    while (check != SQLITE_OK)
     {
       logErr("sql exec error: %s\n", sqlite3_errmsg(db));
+      sleep(1);
+      check = sqlite3_exec(db, query.c_str(), agent_callback, this, &zErrMsg);
     }
   }
   sqlite3_close(db);
@@ -182,7 +185,7 @@ void ChargeStation::readSystemDb()
   int rc;
   std::string query =
       "SELECT hmiVersion FROM deviceInfo WHERE ID=1";
-  rc = sqlite3_open(SYSTEM_DB_PATH, &db);
+  rc = sqlite3_open_v2(SYSTEM_DB_PATH, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX, nullptr);
 
   if (rc != SQLITE_OK)
   {
@@ -191,9 +194,11 @@ void ChargeStation::readSystemDb()
   else
   {
     int check = sqlite3_exec(db, query.c_str(), system_callback, this, &zErrMsg);
-    if (check != SQLITE_OK)
+    while (check != SQLITE_OK)
     {
       logErr("sql exec error: %s\n", sqlite3_errmsg(db));
+      sleep(1);
+      check = sqlite3_exec(db, query.c_str(), system_callback, this, &zErrMsg);
     }
   }
   sqlite3_close(db);
@@ -206,7 +211,7 @@ void ChargeStation::readVfactoryDb()
   int rc;
   std::string query =
       "SELECT model,customer FROM deviceDetails WHERE id=1";
-  rc = sqlite3_open(VFACTORY_DB_PATH, &db);
+  rc = sqlite3_open_v2(VFACTORY_DB_PATH, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX, nullptr);
 
   if (rc != SQLITE_OK)
   {
@@ -215,9 +220,11 @@ void ChargeStation::readVfactoryDb()
   else
   {
     int check = sqlite3_exec(db, query.c_str(), vfactory_callback, this, &zErrMsg);
-    if (check != SQLITE_OK)
+    while (check != SQLITE_OK)
     {
       logErr("sql exec error: %s\n", sqlite3_errmsg(db));
+      sleep(1);
+      check = sqlite3_exec(db, query.c_str(), vfactory_callback, this, &zErrMsg);
     }
   }
   sqlite3_close(db);
@@ -230,7 +237,7 @@ void ChargeStation::readWebconfigDb()
   int rc;
   std::string query =
       "SELECT chargePointId FROM ocppSettings WHERE ID=1";
-  rc = sqlite3_open(WEBCONFIG_DB_PATH, &db);
+  rc = sqlite3_open_v2(WEBCONFIG_DB_PATH, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX, nullptr);
 
   if (rc != SQLITE_OK)
   {
@@ -239,9 +246,11 @@ void ChargeStation::readWebconfigDb()
   else
   {
     int check = sqlite3_exec(db, query.c_str(), webconfig_callback, this, &zErrMsg);
-    if (check != SQLITE_OK)
+    while (check != SQLITE_OK)
     {
       logErr("sql exec error: %s\n", sqlite3_errmsg(db));
+      sleep(1);
+      check = sqlite3_exec(db, query.c_str(), webconfig_callback, this, &zErrMsg);
     }
   }
   sqlite3_close(db);
@@ -262,14 +271,14 @@ void ChargeStation::updateStation(json msg)
     if (type.compare("StatusNotification") == 0)
     {
       chargePoint.getStatusNotification(msg);
-      this->modbusController->set_chargepoint_states(
+      this->modbusController->setChargepointStates(
           chargePoint.status, chargePoint.vendorErrorCode, chargePoint.pilotState);
-      this->modbusController->set_equipment_state(status, chargePoint.status);
+      this->modbusController->setEquipmentState(status, chargePoint.status);
     }
     else if (type.compare("MeterValues") == 0)
     {
       chargePoint.getMeterValues(msg);
-      this->modbusController->set_meter_values(chargePoint.activeEnergyP1,
+      this->modbusController->setMeterValues(chargePoint.activeEnergyP1,
         chargePoint.currentP1, chargePoint.currentP2, chargePoint.currentP3,
         chargePoint.activePowerP1, chargePoint.activePowerP2, chargePoint.activePowerP3,
         chargePoint.voltageP1, chargePoint.voltageP2, chargePoint.voltageP3);
@@ -277,28 +286,28 @@ void ChargeStation::updateStation(json msg)
     else if (type.compare("pilotState") == 0 || type.compare("proximityState") == 0)
     {
       chargePoint.getPilotStates(msg);
-      this->modbusController->set_cable_state(chargePoint.pilotState, chargePoint.proximityPilotState);
+      this->modbusController->setCableState(chargePoint.pilotState, chargePoint.proximityPilotState);
     }
     else if (type.compare("ChargeStationStatusNotification") == 0)
     {
       getStatusNotification(msg);
-      this->modbusController->set_equipment_state(status, chargePoint.status);
+      this->modbusController->setEquipmentState(status, chargePoint.status);
     }
     else if (type.compare("ChargeSessionStatus") == 0)
     {
       chargePoint.chargeSession.getChargeSession(msg);
-      this->modbusController->set_charge_session(chargePoint.chargeSession.startTime, chargePoint.chargeSession.stopTime,
+      this->modbusController->setChargeSession(chargePoint.chargeSession.startTime, chargePoint.chargeSession.stopTime,
         chargePoint.chargeSession.initialEnergy, chargePoint.chargeSession.lastEnergy, chargePoint.chargeSession.status);
     }
     else if (type.compare("serialNumber") == 0)
     {
       getSerial(msg);
-      this->modbusController->set_serial(serial);
+      this->modbusController->setSerial(serial);
     }
     else if (type.compare("phaseType") == 0)
     {
       getPhase(msg);
-      this->modbusController->set_phase(phaseType);
+      this->modbusController->setPhase(phaseType);
     }
     else if (type.compare("powerOptimizer") == 0)
     {
@@ -311,7 +320,7 @@ void ChargeStation::updateStation(json msg)
     else if (type.compare("ocppUpdate") == 0)
     {
       readWebconfigDb();
-      this->modbusController->set_chargepoint_id(chargePointId);
+      this->modbusController->setChargepointId(chargePointId);
     }
     else if (type.compare("AuthorizationStatus") == 0)
     {
@@ -320,37 +329,37 @@ void ChargeStation::updateStation(json msg)
     else if (type.compare("currentOfferedEv") == 0)
     {
       chargePoint.getCurrentOffered(msg);
-      this->modbusController->set_session_max_current(chargePoint.currentOfferedToEv);
+      this->modbusController->setSessionMaxCurrent(chargePoint.currentOfferedToEv);
     }
     else if (type.compare("minCurrent") == 0)
     {
       chargePoint.getMinCurrent(msg);
-      this->modbusController->set_evse_min_current(chargePoint.minCurrent);
+      this->modbusController->setEvseMinCurrent(chargePoint.minCurrent);
     }
     else if (type.compare("maximumCurrent") == 0)
     {
       chargePoint.getMaxCurrent(msg);
-      this->modbusController->set_evse_max_current(chargePoint.maxCurrent);
+      this->modbusController->setEvseMaxCurrent(chargePoint.maxCurrent);
     }
     else if (type.compare("proximityPilotCurrent") == 0)
     {
       chargePoint.getCableMaxCurrent(msg);
-      this->modbusController->set_cable_max_current(chargePoint.cableMaxCurrent);
+      this->modbusController->setCableMaxCurrent(chargePoint.cableMaxCurrent);
     }
     else if (type.compare("failsafeCurrent") == 0)
     {
       chargePoint.getFailsafeCurrent(msg);
-      this->modbusController->set_failsafe_current(chargePoint.failsafeCurrent);
+      this->modbusController->setFailsafeCurrent(chargePoint.failsafeCurrent);
     }
     else if (type.compare("failsafeTimeout") == 0)
     {
       chargePoint.getFailsafeTimeout(msg);
-      this->modbusController->set_failsafe_timeout(chargePoint.failsafeTimeout);
+      this->modbusController->setFailsafeTimeout(chargePoint.failsafeTimeout);
     }
     else if (type.compare("modbusTcpCurrent") == 0)
     {
       chargePoint.getModbusTcpCurrent(msg);
-      this->modbusController->set_charging_current(chargePoint.modbusTcpCurrent);
+      this->modbusController->setChargingCurrent(chargePoint.modbusTcpCurrent);
     }
   }
   else
@@ -368,9 +377,9 @@ void ChargeStation::updateChargeSession()
     if (chargePoint.chargeSession.status != ChargeSessionStatus::Stopped)
     {
       currentTime = time(0);
-      modbusController->set_session_energy(chargePoint.activeEnergyP1 + chargePoint.activeEnergyP2 + chargePoint.activeEnergyP3 - chargePoint.chargeSession.initialEnergy);
+      modbusController->setSessionEnergy(chargePoint.activeEnergyP1 + chargePoint.activeEnergyP2 + chargePoint.activeEnergyP3 - chargePoint.chargeSession.initialEnergy);
       duration = currentTime - chargePoint.chargeSession.startTime;
-      modbusController->set_session_duration(duration);
+      modbusController->setSessionDuration(duration);
     }
     sleep(1);
   }
@@ -439,7 +448,7 @@ void ChargeStation::failsafeChecker()
     {
       this->messageController->sendModbusTcpCurrent(chargePoint.failsafeCurrent);
     }
-    this->modbusController->set_alive_register();
+    this->modbusController->setAliveRegister();
     sleep(failsafePeriod);
   }
 }
@@ -483,7 +492,7 @@ ChargePoint::ChargePoint()
       "activePowerP2,activePowerP3,activeEnergyP1,activeEnergyP2,activeEnergyP3,"
       "availability,minCurrent,maxCurrent,availableCurrent, currentOfferedValue, currentOfferedReason, "
       "proximityPilotCurrent, failsafeCurrent, failsafeTimeout, modbusTcpCurrent FROM chargePoints WHERE chargePointId=1";
-  rc = sqlite3_open(AGENT_DB_PATH, &db);
+  rc = sqlite3_open_v2(AGENT_DB_PATH, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX, nullptr);
 
   if (rc != SQLITE_OK)
   {
@@ -492,9 +501,11 @@ ChargePoint::ChargePoint()
   else
   {
     int check = sqlite3_exec(db, query.c_str(), callback, this, &zErrMsg);
-    if (check != SQLITE_OK)
+    while (check != SQLITE_OK)
     {
       logErr("sql exec error: %s\n", sqlite3_errmsg(db));
+      sleep(1);
+      check = sqlite3_exec(db, query.c_str(), callback, this, &zErrMsg);
     }
   }
   sqlite3_close(db);

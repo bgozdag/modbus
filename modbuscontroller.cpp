@@ -14,7 +14,7 @@ ModbusController::ModbusController(MessageController *mc)
     return;
   }
   logNotice("initialized modbus map\n");
-  std::thread datetimeThread(&ModbusController::update_datetime, this);
+  std::thread datetimeThread(&ModbusController::updateDatetime, this);
   datetimeThread.detach();
 }
 
@@ -46,7 +46,7 @@ void ModbusController::listen()
         logNotice("received new request:\n");
         // rc is the query size
         modbus_reply(context, query, rc, map);
-        parse_tcp_message(query);
+        parseTcpMessage(query);
       }
       else if (rc == -1)
       {
@@ -62,7 +62,7 @@ void ModbusController::listen()
   }
 }
 
-void ModbusController::parse_tcp_message(uint8_t data[])
+void ModbusController::parseTcpMessage(uint8_t data[])
 {
   int i=0;
   msg.transactionIdentifier = data[i++] * 256 + data[i++];
@@ -94,7 +94,7 @@ void ModbusController::parse_tcp_message(uint8_t data[])
   }
 }
 
-void ModbusController::set_chargepoint_states(ChargePointStatus state,
+void ModbusController::setChargepointStates(ChargePointStatus state,
                                               int vendorErrorCode, int pilotState)
 {
   if (state == ChargePointStatus::Available)
@@ -145,43 +145,43 @@ void ModbusController::set_chargepoint_states(ChargePointStatus state,
   set_r_register(uint16_t(vendorErrorCode), EVSE_FAULT_CODE_REG);
 }
 
-void ModbusController::set_cable_max_current(int current)
+void ModbusController::setCableMaxCurrent(int current)
 {
   set_r_register(uint16_t(current), CABLE_MAX_CURRENT_REG);
 }
 
-void ModbusController::set_session_max_current(int current)
+void ModbusController::setSessionMaxCurrent(int current)
 {
   set_r_register(uint16_t(current), SESSION_MAX_CURRENT_REG);
 }
 
-void ModbusController::set_evse_max_current(int current)
+void ModbusController::setEvseMaxCurrent(int current)
 {
   set_r_register(uint16_t(current), EVSE_MAX_CURRENT_REG);
   set_r_register(uint32_t(230 * current), CHARGEPOINT_POWER_REG);
 }
 
-void ModbusController::set_evse_min_current(int current)
+void ModbusController::setEvseMinCurrent(int current)
 {
   set_r_register(uint16_t(current), EVSE_MIN_CURRENT_REG);
 }
 
-void ModbusController::set_failsafe_current(int current)
+void ModbusController::setFailsafeCurrent(int current)
 {
   set_rw_register(uint16_t(current), FAILSAFE_CURRENT_REG);
 }
 
-void ModbusController::set_failsafe_timeout(int time)
+void ModbusController::setFailsafeTimeout(int time)
 {
   set_rw_register(uint16_t(time), FAILSAFE_TIMEOUT_REG);
 }
 
-void ModbusController::set_charging_current(int time)
+void ModbusController::setChargingCurrent(int time)
 {
   set_rw_register(uint16_t(time), CHARGING_CURRENT_REG);
 }
 
-void ModbusController::set_alive_register()
+void ModbusController::setAliveRegister()
 {
   set_rw_register(uint16_t(0), ALIVE_REGISTER);
 }
@@ -270,7 +270,7 @@ void ModbusController::set_rw_register(uint16_t data, int addr)
   }
 }
 
-void ModbusController::set_equipment_state(ChargeStationStatus stationStatus, ChargePointStatus pointStatus)
+void ModbusController::setEquipmentState(ChargeStationStatus stationStatus, ChargePointStatus pointStatus)
 {
   if (stationStatus == ChargeStationStatus::Initializing)
   {
@@ -294,7 +294,7 @@ void ModbusController::set_equipment_state(ChargeStationStatus stationStatus, Ch
   }
 }
 
-void ModbusController::set_meter_values(int energy, int currentP1, int currentP2, int currentP3, int powerP1, int powerP2, int powerP3, int voltageP1, int voltageP2, int voltageP3)
+void ModbusController::setMeterValues(int energy, int currentP1, int currentP2, int currentP3, int powerP1, int powerP2, int powerP3, int voltageP1, int voltageP2, int voltageP3)
 {
   set_r_register(uint32_t(round((float)energy / 10000.0)), METER_READING_REG);
   set_r_register(uint16_t(currentP1), CURRENT_L1_REG);
@@ -309,17 +309,17 @@ void ModbusController::set_meter_values(int energy, int currentP1, int currentP2
   set_r_register(uint32_t(powerP1 + powerP2 + powerP3), ACTIVE_POWER_TOTAL_REG);
 }
 
-void ModbusController::set_chargepoint_id(std::string id)
+void ModbusController::setChargepointId(std::string id)
 {
   set_r_register(id, CHARGEPOINT_ID_REG);
 }
 
-void ModbusController::set_charge_session(int startTime, int stopTime, int initialEnergy, int lastEnergy, ChargeSessionStatus status)
+void ModbusController::setChargeSession(int startTime, int stopTime, int initialEnergy, int lastEnergy, ChargeSessionStatus status)
 {
   std::stringstream ss;
   char data[3];
   int energy = lastEnergy - initialEnergy;
-  set_session_energy(energy);
+  setSessionEnergy(energy);
   if (startTime != 0)
   {
     time_t startEpoch = startTime;
@@ -352,31 +352,31 @@ void ModbusController::set_charge_session(int startTime, int stopTime, int initi
   }
 }
 
-void ModbusController::set_serial(std::string serial)
+void ModbusController::setSerial(std::string serial)
 {
   set_r_register(serial, SERIAL_NUMBER_REG);
 }
-void ModbusController::set_brand(std::string brand)
+void ModbusController::setBrand(std::string brand)
 {
   set_r_register(brand, BRAND_REG);
 }
 
-void ModbusController::set_model(std::string model)
+void ModbusController::setModel(std::string model)
 {
   set_r_register(model, MODEL_REG);
 }
 
-void ModbusController::set_phase(int phase)
+void ModbusController::setPhase(int phase)
 {
   set_r_register((uint16_t)phase, NUMBER_OF_PHASES_REG);
 }
 
-void ModbusController::set_firmware_version(std::string hmiVersion, std::string acpwVersion)
+void ModbusController::setFirmwareVersion(std::string hmiVersion, std::string acpwVersion)
 {
   set_r_register(hmiVersion + acpwVersion, FIRMWARE_VERSION_REG);
 }
 
-void ModbusController::update_datetime()
+void ModbusController::updateDatetime()
 {
   time_t currentTime;
   tm *dateTime;
@@ -392,7 +392,7 @@ void ModbusController::update_datetime()
     ss << data;
     snprintf(data, 3, "%02d", dateTime->tm_mday);
     ss << data;
-    set_date(atoi(ss.str().c_str()));
+    setDate(atoi(ss.str().c_str()));
     ss.clear();
     ss.str("");
     snprintf(data, 3, "%02d", dateTime->tm_hour);
@@ -401,34 +401,34 @@ void ModbusController::update_datetime()
     ss << data;
     snprintf(data, 3, "%02d", dateTime->tm_sec);
     ss << data;
-    set_time(atoi(ss.str().c_str()));
+    setTime(atoi(ss.str().c_str()));
     ss.clear();
     ss.str("");
     sleep(1);
   }
 }
 
-void ModbusController::set_session_duration(int duration)
+void ModbusController::setSessionDuration(int duration)
 {
   set_r_register(uint32_t(duration), SESSION_DURATION_REG);
 }
 
-void ModbusController::set_session_energy(int energy)
+void ModbusController::setSessionEnergy(int energy)
 {
   set_r_register(uint32_t(energy), SESSION_ENERGY_REG);
 }
 
-void ModbusController::set_time(int currentTime)
+void ModbusController::setTime(int currentTime)
 {
   set_r_register(uint32_t(currentTime), TIME_REG);
 }
 
-void ModbusController::set_date(int currentDate)
+void ModbusController::setDate(int currentDate)
 {
   set_r_register(uint32_t(currentDate), DATE_REG);
 }
 
-void ModbusController::set_cable_state(int pilotState, int proximityState)
+void ModbusController::setCableState(int pilotState, int proximityState)
 {
   if (proximityState == 1)
   {
