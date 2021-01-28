@@ -114,12 +114,12 @@ void ModbusController::setChargepointStates(ChargePointStatus state,
   }
   else if (state == ChargePointStatus::SuspendedEVSE)
   {
-    set_r_register(uint16_t(4), CHARGEPOINT_STATE_REG);
+    set_r_register(uint16_t(3), CHARGEPOINT_STATE_REG);
     set_r_register(uint16_t(0), CHARGING_STATE_REG);
   }
   else if (state == ChargePointStatus::SuspendedEV)
   {
-    set_r_register(uint16_t(3), CHARGEPOINT_STATE_REG);
+    set_r_register(uint16_t(4), CHARGEPOINT_STATE_REG);
     set_r_register(uint16_t(0), CHARGING_STATE_REG);
   }
   else if (state == ChargePointStatus::Finishing)
