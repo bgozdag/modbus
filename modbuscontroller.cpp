@@ -6,7 +6,7 @@ ModbusController::ModbusController(MessageController *mc)
   port = 502;
   context = modbus_new_tcp(host.c_str(), port);
   this->messageController = mc;
-  map = modbus_mapping_new(0, 0, 6001, 6001);
+  map = modbus_mapping_new(0, 0, 6001, 1514);
   if (map == NULL)
   {
     logEmerg("failed to allocate the map: %s\n", modbus_strerror(errno));
