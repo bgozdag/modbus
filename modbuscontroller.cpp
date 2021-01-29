@@ -43,10 +43,15 @@ void ModbusController::listen()
       rc = modbus_receive(context, query);
       if (rc > 0)
       {
-        logNotice("received new request:\n");
         // rc is the query size
         modbus_reply(context, query, rc, map);
         parseTcpMessage(query);
+
+        // logDebug("rc: %d\n", rc);
+        // for(int i=0;i<rc;i++)
+        // {
+        //   logDebug("%d\n", query[i]);
+        // }
       }
       else if (rc == -1)
       {
@@ -70,26 +75,59 @@ void ModbusController::parseTcpMessage(uint8_t data[])
   msg.messageLength = data[i++] * 256 + data[i++];
   msg.unitIdentifier = data[i++];
   msg.functionCode = data[i++];
-  logNotice("function: %d\n", msg.functionCode);
-  msg.address = data[i++] * 256 + data[i++];
-  logNotice("address: %d\n", msg.address);
-  msg.nb = data[i++] * 256 + data[i++];
-  if (msg.messageLength > 6)
+  // logNotice("function: %d\n", msg.functionCode);
+
+  if (msg.functionCode == 6)
   {
-    msg.dataSize = data[i++];
-    msg.data = data[i++] * 256 + data[i++];
-    logNotice("data: %d\n", msg.data);
+    msg.address = data[i++] * 256 + data[i++];
+    // logNotice("address: %d\n", msg.address);
     if (msg.address == FAILSAFE_CURRENT_REG)
     {
-      messageController->sendFailsafeCurrent(msg.data);
+      messageController->sendFailsafeCurrent(this->map->tab_registers[FAILSAFE_CURRENT_REG]);
     }
     else if (msg.address == FAILSAFE_TIMEOUT_REG)
     {
-      messageController->sendFailsafeTimeout(msg.data);
+      messageController->sendFailsafeTimeout(this->map->tab_registers[FAILSAFE_TIMEOUT_REG]);
     }
     else if (msg.address == CHARGING_CURRENT_REG)
     {
-      messageController->sendModbusTcpCurrent(msg.data);
+      messageController->sendModbusTcpCurrent(this->map->tab_registers[CHARGING_CURRENT_REG]);
+    }
+  }
+  else if (msg.functionCode == 23)
+  {
+    i += 4;
+    msg.address = data[i++] * 256 + data[i++];
+    // logNotice("address: %d\n", msg.address);
+    if (msg.address == FAILSAFE_CURRENT_REG)
+    {
+      messageController->sendFailsafeCurrent(this->map->tab_registers[FAILSAFE_CURRENT_REG]);
+    }
+    else if (msg.address == FAILSAFE_TIMEOUT_REG)
+    {
+      messageController->sendFailsafeTimeout(this->map->tab_registers[FAILSAFE_TIMEOUT_REG]);
+    }
+    else if (msg.address == CHARGING_CURRENT_REG)
+    {
+      messageController->sendModbusTcpCurrent(this->map->tab_registers[CHARGING_CURRENT_REG]);
+    }
+  }
+  else if (msg.functionCode == 16)
+  {
+    msg.address = data[i++] * 256 + data[i++];
+    // logNotice("address: %d\n", msg.address);
+    msg.nb = data[i++] * 256 + data[i++];
+    if (msg.address <= FAILSAFE_CURRENT_REG && msg.address + msg.nb >= FAILSAFE_CURRENT_REG)
+    {
+      messageController->sendFailsafeCurrent(this->map->tab_registers[FAILSAFE_CURRENT_REG]);
+    }
+    else if (msg.address <= FAILSAFE_TIMEOUT_REG && msg.address + msg.nb >= FAILSAFE_TIMEOUT_REG)
+    {
+      messageController->sendFailsafeTimeout(this->map->tab_registers[FAILSAFE_TIMEOUT_REG]);
+    }
+    else if (msg.address <= CHARGING_CURRENT_REG && msg.address + msg.nb >= CHARGING_CURRENT_REG)
+    {
+      messageController->sendModbusTcpCurrent(this->map->tab_registers[CHARGING_CURRENT_REG]);
     }
   }
 }
